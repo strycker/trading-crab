@@ -120,8 +120,8 @@ CUSTOM_COLORS = [
 
 MY_CMAP = ListedColormap(CUSTOM_COLORS)
 
-DATA_PATH = "../data/"
-# DATA_PATH = "../../data/"
+# DATA_PATH = "../data/"
+DATA_PATH = "../../data/"
 
 
 

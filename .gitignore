@@ -1,3 +1,24 @@
+# Data checkpoints (large, user-specific)
+data/*.pickle
+data/*.csv
+data/*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Environment
 .env
-.ipynb_checkpoints
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
 *checkpoint*

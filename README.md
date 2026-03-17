@@ -1,6 +1,10 @@
 # Trading-Crab
 
-## Predict market conditions, best portfolios, and stock picks
+Market regime classification and prediction pipeline.
+
+Predict market conditions, best portfolios, and stock picks.
+
+<br>
 
 ![Glenn with crab 2025](/images/glenn_with_crab_2025_300x400.png)
 ![Glenn with Wei-Xuen and Wei-Tong 2025](/images/glenn_weixuen_weitong_with_crab_300x400.png)
@@ -11,7 +15,22 @@ ___
 
 <br>
 
-# Concepts / Main Approach Outline:
+## Overview
+
+Predicts market conditions, optimal portfolios, and stock picks by:
+
+1. **Data Ingestion** — Scrapes macro financial data from multpl.com and the FRED API (quarterly resolution, ~1950–present).
+2. **Feature Engineering** — Log transforms, smoothed derivatives (1st–3rd order), cross-asset ratios, Bernstein-polynomial gap filling.
+3. **Clustering** — PCA dimensionality reduction, KMeans + size-constrained KMeans to label each quarter with a market regime.
+4. **Regime Interpretation** — Statistical profiling of each cluster to assign human-readable names (e.g. "Stagflation", "Growth Boom").
+5. **Supervised Prediction** — Classifiers to predict today's regime from currently-available features (no look-ahead).
+6. **Transition Probabilities** — Empirical regime transition matrices and forward-looking probability models.
+7. **Asset Returns by Regime** — Per-regime median returns for major asset classes.
+8. **Portfolio Construction** — Regime-conditional portfolio recommendations.
+
+<br>
+
+## Concepts / Main Approach Outline:
 - Scrape public datasets and use free APIs to obtain macro financial data over a 50-year period, ensuring these metrics are still available today if I had to score a model now
 - Assumption: one of the most predictive features in any financial model will be the market conditions... are we in a recession?  A market boom?  A bubble?  A slowly forming top?  High/Low inflation?  Stagflation?  Therefore we want to CLASSIFY (apply unsupervised learning) to our time series datasets on the order of quarters.  Idea would be to get roughly equally-sized clusters that have distinct behaviors
 - Once we have the time-series classified according to variance techniques, we want to PREDICT today's classification using data available to us TODAY.  This means we want to construct a SUPERVISED learning model that, given features known only at that time &mdash; nothing forward-looking or revised &mdash; we have a notion of what market condition regime we are in
@@ -29,7 +48,7 @@ ___
 <br>
 <br>
 
-# To Do:
+## To Do:
 - Reduce number of rows in the initial dataset, as many do not span the right time range
 - Add historic Gold, Oil, TLT, etc. to datasets &mdash; see https://www.macrotrends.net/
 - Standardize the time range (1950-2025?), infer missing data, throw away or fix anything looking odd
@@ -43,3 +62,56 @@ ___
 
 <br>
 <br>
+
+## Repository Structure
+
+```
+trading_crab/
+├── README.md
+├── requirements.txt
+├── setup.py
+├── src/python           # Python package
+│   ├── __init__.py
+│   ├── config.py           # All constants, feature lists, CLI parsing
+│   ├── data_ingestion.py   # Scraping multpl.com, FRED API, Grok labels
+│   ├── feature_engineering.py  # Log transforms, derivatives, interpolation
+│   ├── clustering.py       # PCA, KMeans, regime labeling
+│   ├── regime_analysis.py  # Interpretation, transitions, naming
+│   ├── supervised.py       # Regime prediction models
+│   ├── asset_returns.py    # Per-regime asset class performance
+│   ├── portfolio.py        # Portfolio construction
+│   ├── plotting.py         # All visualization helpers
+│   └── pipeline.py         # End-to-end orchestration
+├── tests/
+│   ├── __init__.py
+│   ├── test_data_ingestion.py
+│   ├── test_feature_engineering.py
+│   ├── test_clustering.py
+│   └── test_regime_analysis.py
+├── notebooks/
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_clustering.ipynb
+│   └── 03_regime_analysis.ipynb
+└── data/                   # Pickle/CSV checkpoints (gitignored)
+```
+
+## Usage
+
+```bash
+# Full pipeline (scrape + compute + cluster + analyze)
+python -m trading_crab.pipeline --refresh --recompute --plots
+
+# Load from checkpoints, just re-cluster
+python -m trading_crab.pipeline --plots
+
+# Recompute derived features but don't re-scrape
+python -m trading_crab.pipeline --recompute
+
+# Run tests
+pytest tests/ -v
+```
+
+## Requirements
+
+See `requirements.txt`. Key dependencies: pandas, numpy, scikit-learn,
+scipy, fredapi, k-means-constrained, lxml, requests, python-dotenv, matplotlib.
