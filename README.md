@@ -30,6 +30,13 @@ Predicts market conditions, optimal portfolios, and stock picks by:
 
 <br>
 
+## Research Resources
+Here are some helpful links for studying what we're about to do:
+
+1. [Market Regimes](https://youtu.be/azivQL27UgY) -- I created most of my regime ideas BEFORE watching this video, but it's a nice recap of the main points
+
+<br>
+
 ## Concepts / Main Approach Outline:
 - Scrape public datasets and use free APIs to obtain macro financial data over a 50-year period, ensuring these metrics are still available today if I had to score a model now
 - Assumption: one of the most predictive features in any financial model will be the market conditions... are we in a recession?  A market boom?  A bubble?  A slowly forming top?  High/Low inflation?  Stagflation?  Therefore we want to CLASSIFY (apply unsupervised learning) to our time series datasets on the order of quarters.  Idea would be to get roughly equally-sized clusters that have distinct behaviors
