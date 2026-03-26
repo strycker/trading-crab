@@ -33,7 +33,7 @@ Predicts market conditions, optimal portfolios, and stock picks by:
 ## Research Resources
 Here are some helpful links for studying what we're about to do:
 
-1. [Market Regimes](https://youtu.be/azivQL27UgY) -- I created most of my regime ideas BEFORE watching this video, but it's a nice recap of the main points
+1. [Market Regimes](https://youtu.be/azivQL27UgY) — I created most of my regime ideas BEFORE watching this video, but it's a nice recap of the main points
 
 <br>
 
