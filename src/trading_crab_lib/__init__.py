@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 
 def _resolve_dir(env_var: str, default: Path) -> Path:
@@ -33,7 +33,6 @@ OUTPUT_DIR = _resolve_dir("TC_OUTPUT_DIR", ROOT / "outputs")
 
 
 # ── Convenience re-exports ──────────────────────────────────────────
-# Enables:  import trading_crab_lib as tcl; cfg = tcl.load()
 
 def load(*args, **kwargs) -> dict:
     """Shortcut for :func:`trading_crab_lib.config.load`."""
@@ -41,13 +40,6 @@ def load(*args, **kwargs) -> dict:
     return _load(*args, **kwargs)
 
 
-def load_portfolio(*args, **kwargs) -> dict:
-    """Shortcut for :func:`trading_crab_lib.config.load_portfolio`."""
-    from trading_crab_lib.config import load_portfolio as _load_portfolio
-    return _load_portfolio(*args, **kwargs)
-
-
-# Lazy imports to avoid circular dependencies at module load time
 def __getattr__(name: str):
     if name == "RunConfig":
         from trading_crab_lib.runtime import RunConfig
@@ -56,4 +48,3 @@ def __getattr__(name: str):
         from trading_crab_lib.checkpoints import CheckpointManager
         return CheckpointManager
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
