@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Market Regime Pipeline — Global Settings
+#  Edit values here; never hardcode them in source files.
+#
+#  Sections are populated per Q-phase:
+#    Q0 (S0.7): skeleton headers only
+#    Q1 (S1.1): data + fred sections
+#    Q1 (S1.2): multpl + macrotrends sections
+#    Q2 (S2.1): features.log_columns, initial_features, clustering_features
+#    Q2 (S2.2): features.divergence, features.asset_price_columns
+#    Q3 (S3.1): clustering section
+#    Q5 (S5.1): prediction section
+#    Q6 (S6.1): assets + dashboard sections
+#    Q7 (S7.1): tactics section
+#    Q8 (S8.1): pipeline section
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Q1: Data Ingestion ────────────────────────────────────────────────────────
+data:
+  start_date: "1950-01-01"
+  end_date:   null
+  frequency:  "Q"
+  drop_incomplete_tail: true
+
+fred:
+  series: {}    # populated at S1.1
+
+multpl:
+  datasets: []  # populated at S1.2
+
+macrotrends:
+  base_url: "https://www.macrotrends.net"
+  series: []    # populated at S1.2
+
+# ── Q2: Feature Engineering ───────────────────────────────────────────────────
+features:
+  log_columns:          []  # populated at S2.1
+  asset_price_columns:  []  # populated at S2.2
+  initial_features:     []  # populated at S2.1
+  clustering_features:  []  # populated at S2.1
+  derivative_window:    5
+  divergence: {}            # populated at S2.2
+
+# ── Q3: Clustering ────────────────────────────────────────────────────────────
+clustering:
+  n_pca_components:  5
+  n_clusters_search: 12
+  k_cap:             5
+  balanced_k:        5
+  random_state:      42
+
+# ── Q5: Prediction ────────────────────────────────────────────────────────────
+prediction:
+  test_size:                 0.20
+  random_state:              42
+  n_estimators:              200
+  forward_horizons_quarters: [1, 2, 4, 8]
+  cv_splits:                 5
+  dt_max_depth:              8
+  rf_max_depth:              12
+  use_boosted:               true
+  boosted_max_depth:         6
+  boosted_learning_rate:     0.1
+  boosted_n_estimators:      200
+  interpret_tree_max_depth:  3
+  interpret_top_k_features:  10
+  class_balance_method:      "balanced"
+
+# ── Q6: Asset Returns & Dashboard ─────────────────────────────────────────────
+assets:
+  etfs: []          # populated at S6.1
+  portfolio_templates: []
+  behavior_thresholds:
+    green_median: 0.02
+    red_median:   0.00
+  recommendation_threshold: 0.03
+
+dashboard:
+  signal_thresholds:
+    green:  0.05
+    yellow: 0.00
+
+# ── Q7: Diagnostics & Tactics ─────────────────────────────────────────────────
+diagnostics:
+  ratios: []
+  rrg_benchmarks: []
+
+tactics:
+  vol_windows:       [5, 20, 60]
+  vol_bands:
+    low:  0.05
+    high: 0.25
+  trend_windows:     [20, 60]
+  trend_min_slope:   0.0
+  corr_lookback:     60
+
+# ── Q8: Pipeline Orchestration ────────────────────────────────────────────────
+pipeline:
+  random_state: 42
+
+# ── Plotting (notebook QA views — not used by models) ─────────────────────────
+plotting:
+  sample_series:  []   # populated at S1.1
+  key_indicators: []   # populated at S4.2
+

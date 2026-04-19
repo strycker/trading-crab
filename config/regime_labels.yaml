@@ -1,0 +1,6 @@
+# Human-readable regime name overrides.
+# After clustering, the profiler assigns a label based on statistics.
+# These entries pin specific cluster IDs to names once clusters stabilize.
+# Format:  cluster_id: "Name"
+# Populated at Q4 after running pipelines/04_regime_label.py for the first time.
+
