@@ -1,24 +1,47 @@
-# Data checkpoints (large, user-specific)
-data/*.pickle
-data/*.csv
-data/*.xlsx
+# Environment
+.env
+*.env
+.venv/
+venv/
+env/
 
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
 *.egg-info/
 dist/
 build/
+.eggs/
 
-# Environment
-.env
-.venv/
-venv/
+# Jupyter
+.ipynb_checkpoints/
+
+# Data — never commit raw or generated data
+*checkpoint*
+data/*.pickle
+data/*.csv
+data/*.xlsx
+data/raw/
+data/processed/
+data/regimes/
+data/checkpoints/
+outputs/plots/
+outputs/models/
+outputs/reports/
+
+# Secrets / API keys
+*.key
+config/secrets.yaml
+config/email.yaml
+config/email.local.yaml
+config/portfolio.local.yaml
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
 .idea/
-
-# Jupyter
-.ipynb_checkpoints/
-*checkpoint*
+*.swp

@@ -1,13 +1,21 @@
 # Trading-Crab
 
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Market regime classification and prediction pipeline.
+
+<br>
 
 Predict market conditions, best portfolios, and stock picks.
 
 <br>
 
+Classifies each calendar quarter with a macro regime (e.g. Stagflation, Growth Boom), then predicts today's regime and forward transition probabilities to generate weekly portfolio recommendations.
+
+<br>
+
 ![Glenn with crab 2025](/images/glenn_with_crab_2025_300x400.png)
-![Glenn with Wei-Xuen and Wei-Tong 2025](/images/glenn_weixuen_weitong_with_crab_300x400.png)
 
 <br>
 
@@ -59,6 +67,67 @@ Predicts market conditions, optimal portfolios, and stock picks by:
   - For each regime, find what assets CONSISTENTLY grew, e.g., for every quarter labeled for class X, asset Y always grew each quarter, no negative quarters.  There will likely be noise, but see if you can relax the criteria or find a cleaner signal, then find the right ETFs for the right asset classes or sectors (e.g., stagflation might mean gold is best, growth might mean tech and small caps best, etc.).
   - SUPERVISED predictive modeling using other features.  At this point you CANNOT use any variable that was revised or otherwise had forward-knowledge of the current or future state.  All features must be values known at the moment we would have been choosing a portfolio.
 - During the supervised learning phase, good to first find feature importance, then reduce the number of features, then try running a single Decision Tree just to get most of the explanatory power before running a Random Forest / XGBoost or whatever is the best final model
+
+<br>
+<br>
+
+## Two Packages
+
+|
+ Package
+|
+ pip name
+|
+ What it provides
+|
+|
+---
+|
+---
+|
+---
+|
+|
+`src/trading_crab_lib/`
+|
+**
+`trading-crab-lib`
+**
+|
+ Library: transforms, clustering, prediction, reporting, plotting, ingestion
+|
+|
+`src/trading_crab/`
+|
+**
+`trading-crab`
+**
+|
+ Application: CLI (
+`tradingcrab`
+) + pipeline orchestration
+|
+
+`trading-crab` depends on `trading-crab-lib`. The library can be used standalone.
+
+<br>
+<br>
+
+## Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/strycker/trading-crab.git
+cd trading-crab
+pip install -e "src/trading_crab_lib/[all,dev]"
+pip install -e ".[dev]"
+
+# 2. Set your FRED API key (free at fred.stlouisfed.org)
+cp .env.example .env
+# edit .env: FRED_API_KEY=your_key_here
+
+# 3. Run the pipeline
+tradingcrab --refresh --recompute --plots
 
 <br>
 <br>

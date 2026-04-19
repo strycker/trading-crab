@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68,<76", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-crab"
+version = "0.1.0"
+description = "Market regime classification pipeline — CLI and pipeline orchestration"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{ name = "Strycker" }]
+keywords = ["finance", "trading-crab", "macroeconomics", "portfolio"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "trading-crab-lib>=0.1.0",   # the library this app wraps
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+tradingcrab         = "trading_crab.cli:run_pipeline"
+tradingcrab-setup   = "trading_crab.cli:setup"
+tradingcrab-publish = "trading_crab.cli:publish_notebooks"
+
+[project.urls]
+Homepage   = "https://github.com/strycker/trading-crab"
+Repository = "https://github.com/strycker/trading-crab"
+Issues     = "https://github.com/strycker/trading-crab/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "ipykernel",
+    "jupyterlab",
+    "flake8",
+]
+
+# Find only the app package; the library has its own pyproject.toml
+[tool.setuptools.packages.find]
+where   = ["src"]
+include = ["trading_crab"]
+
+[tool.pytest.ini_options]
+testpaths  = ["tests"]
+pythonpath = ["src"]
+filterwarnings = [
+    "ignore::RuntimeWarning:statsmodels",
+    "ignore:A date index has been provided:UserWarning",
+    "ignore:invalid value encountered in reduce:RuntimeWarning",
+    "ignore:divide by zero encountered:RuntimeWarning",
+]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_configs = true
+# Not strict yet — enable incrementally as type coverage improves.
+# Next targets: warn_return_any, warn_unreachable, disallow_untyped_defs.
+
+# uv workspace: editable-installs both packages with a single `uv sync`
+[tool.uv.workspace]
+members = ["src/trading_crab_lib"]
