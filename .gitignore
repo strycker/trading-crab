@@ -18,6 +18,8 @@ build/
 .ipynb_checkpoints/
 
 # Data — never commit raw or generated data
+# but allow checkpoints.py of course!
+!src/trading_crab_lib/checkpoints.py
 *checkpoint*
 data/*.pickle
 data/*.csv

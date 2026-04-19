@@ -1,0 +1,61 @@
+# Multi-version CI: lint + test across Python 3.10–3.13
+# Runs on every push/PR to main.
+
+name: Python package
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false  # submodules are reference copies, not needed for CI
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8
+        # Install library with all optional extras (ingestion, plotting, hmm,
+        # clustering-extras, boosting) so no tests are skipped due to missing deps.
+        pip install -e "src/trading_crab_lib/[all,dev]"
+        pip install -e ".[dev]"
+        # Additional optional packages not covered by pyproject.toml extras
+        pip install \
+          k-means-constrained \
+          cssselect \
+          curl_cffi \
+          kneed \
+          hdbscan || true   # hdbscan may fail to compile on some matrix versions; non-fatal
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=gsd-scratch-work,trading-crab-lib
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=gsd-scratch-work,trading-crab-lib
+
+    - name: Test with pytest
+      run: |
+        pytest tests/ -v --tb=short
+
+    - name: Type-check with mypy
+      run: |
+        pip install mypy
+        # Informational only — exit-zero until full type coverage is in place.
+        mypy src/trading_crab src/trading_crab_lib --ignore-missing-imports --no-error-summary || true
