@@ -27,15 +27,11 @@ try:
         matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.colors as mcolors
-    import matplotlib.ticker as mticker
 except ImportError as _matplotlib_err:
     raise ImportError(
         "matplotlib is required for plotting functions. "
         "Install with: pip install 'trading-crab-lib[plotting]'"
     ) from _matplotlib_err
-
-import numpy as np
-import pandas as pd
 
 from trading_crab_lib import OUTPUT_DIR
 from trading_crab_lib.runtime import RunConfig
@@ -129,7 +125,7 @@ def list_available_plots(plot_dir: Path | None = None) -> str:
 
     pngs = sorted(d.glob("*.png"))
     if not pngs:
-        return "No plots found in %s" % d
+        return f"No plots found in {d}"
 
     lines = [
         f"{'Filename':<50} {'Modified':<22} {'Size':>10}",

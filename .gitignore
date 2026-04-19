@@ -19,6 +19,7 @@ build/
 
 # Data — never commit raw or generated data
 *checkpoint*
+!src/trading_crab_lib/checkpoints.py
 data/*.pickle
 data/*.csv
 data/*.xlsx
