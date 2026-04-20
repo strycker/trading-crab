@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-crab"
-version = "0.1.0"
+version = "0.1.1"
 description = "Market regime classification pipeline — CLI and pipeline orchestration"
 readme = "README.md"
 license = {text = "MIT"}
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "trading-crab-lib>=0.1.0",   # the library this app wraps
+    "trading-crab-lib>=0.1.1",   # the library this app wraps
     "pyyaml>=6.0",
     "python-dotenv>=1.0",
 ]
