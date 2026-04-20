@@ -1,0 +1,16 @@
+[MASTER]
+ignore-paths=^tests/.*,^\.github/.*
+
+[MESSAGES CONTROL]
+disable=
+    trailing-newlines,
+    import-outside-toplevel,
+    wrong-import-position,
+    missing-class-docstring,
+    too-many-instance-attributes,
+    multiple-statements,
+    cyclic-import
+
+[TYPECHECK]
+ignored-modules=
+    trading_crab_lib.checkpoints

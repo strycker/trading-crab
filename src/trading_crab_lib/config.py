@@ -36,7 +36,7 @@ def load(
         cfg: dict[str, Any] = settings_path
     else:
         path = Path(settings_path) if settings_path is not None else CONFIG_DIR / "settings.yaml"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
 
     fred_key = os.getenv("FRED_API_KEY")

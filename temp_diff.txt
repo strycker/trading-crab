@@ -1,0 +1,339 @@
+
+
+
+(py310) glestryc@WKMZT91924D8 github_repos % diff -r ./backup_trading_crab_20260419_001/ ./backup_trading_crab_cursor_20260419_001/
+Only in ./backup_trading_crab_20260419_001: .env
+Only in ./backup_trading_crab_20260419_001/.github/workflows: publish-app.yml
+Only in ./backup_trading_crab_20260419_001/.github/workflows: publish-lib.yml
+Only in ./backup_trading_crab_cursor_20260419_001/.github/workflows: publish-pypi.yml
+diff -r ./backup_trading_crab_20260419_001/.github/workflows/pylint.yml ./backup_trading_crab_cursor_20260419_001/.github/workflows/pylint.yml
+3c3,8
+< on: [push]
+---
+> on:
+>   push:
+>     branches: ["main"]
+>   pull_request:
+>     branches: ["main"]
+>   workflow_dispatch:
+6c11
+<   build:
+---
+>   pylint:
+10c15
+<         python-version: ["3.8", "3.9", "3.10"]
+---
+>         python-version: ["3.10"]
+12,23c17,34
+<     - uses: actions/checkout@v4
+<     - name: Set up Python ${{ matrix.python-version }}
+<       uses: actions/setup-python@v3
+<       with:
+<         python-version: ${{ matrix.python-version }}
+<     - name: Install dependencies
+<       run: |
+<         python -m pip install --upgrade pip
+<         pip install pylint
+<     - name: Analysing the code with pylint
+<       run: |
+<         pylint $(git ls-files '*.py')
+---
+>       - uses: actions/checkout@v4
+>
+>       - name: Set up Python ${{ matrix.python-version }}
+>         uses: actions/setup-python@v5
+>         with:
+>           python-version: ${{ matrix.python-version }}
+>           cache: pip
+>
+>       - name: Install lint dependencies
+>         run: |
+>           python -m pip install --upgrade pip
+>           pip install pylint
+>           pip install -e "./src/trading_crab_lib[dev,plotting]"
+>           pip install -e ".[dev]"
+>
+>       - name: Analyse source code with pylint
+>         run: |
+>           pylint src/trading_crab src/trading_crab_lib
+diff -r ./backup_trading_crab_20260419_001/.github/workflows/python-app.yml ./backup_trading_crab_cursor_20260419_001/.github/workflows/python-app.yml
+17d16
+<
+21,36c20,37
+<     - uses: actions/checkout@v4
+<     - name: Set up Python 3.10
+<       uses: actions/setup-python@v3
+<       with:
+<         python-version: "3.10"
+<     - name: Install dependencies
+<       run: |
+<         python -m pip install --upgrade pip
+<         pip install flake8 pytest
+<         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+<     - name: Lint with flake8
+<       run: |
+<         # stop the build if there are Python syntax errors or undefined names
+<         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+<         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+<         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+---
+>       - uses: actions/checkout@v4
+>       - name: Set up Python 3.10
+>         uses: actions/setup-python@v5
+>         with:
+>           python-version: "3.10"
+>           cache: pip
+>       - name: Install dependencies
+>         run: |
+>           python -m pip install --upgrade pip
+>           pip install flake8
+>           pip install -e "./src/trading_crab_lib[dev]"
+>           pip install -e ".[dev]"
+>       - name: Lint with flake8
+>         run: |
+>           # stop the build if there are Python syntax errors or undefined names
+>           flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
+>           # keep non-critical style findings visible without failing the job
+>           flake8 src tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+Only in ./backup_trading_crab_20260419_001/.github/workflows: python-package.yml
+diff -r ./backup_trading_crab_20260419_001/.gitignore ./backup_trading_crab_cursor_20260419_001/.gitignore
+21,22d20
+< # but allow checkpoints.py of course!
+< !src/trading_crab_lib/checkpoints.py
+23a22
+> !src/trading_crab_lib/checkpoints.py
+Only in ./backup_trading_crab_cursor_20260419_001: .pylintrc
+diff -r ./backup_trading_crab_20260419_001/src/trading_crab/cli.py ./backup_trading_crab_cursor_20260419_001/src/trading_crab/cli.py
+12,14d11
+< import sys
+<
+<
+diff -r ./backup_trading_crab_20260419_001/src/trading_crab_lib/checkpoints.py ./backup_trading_crab_cursor_20260419_001/src/trading_crab_lib/checkpoints.py
+2,5c2
+< CheckpointManager — save, load, and validity-check intermediate DataFrames.
+<
+< Each checkpoint is a parquet file under data/checkpoints/ with a JSON manifest.
+< Models (sklearn objects) are stored as joblib alongside.
+---
+> Checkpoint persistence helpers for pipeline intermediate datasets.
+10d6
+< import hashlib
+12,14c8
+< import logging
+< import os
+< from datetime import datetime, timedelta
+---
+> from datetime import datetime, timezone
+18d11
+< import joblib
+21c14
+< from trading_crab_lib import DATA_DIR, CONFIG_DIR
+---
+> from trading_crab_lib import DATA_DIR
+23,24d15
+< log = logging.getLogger(__name__)
+<
+27,31d17
+< PRESERVATION_CHECKPOINT_NAMES: frozenset[str] = frozenset({
+<     "macro_raw_secondary",
+<     "features_secondary",
+<     "features_supervised_secondary",
+< })
+33,54d18
+<
+< def preservation_checkpoint_should_write(
+<     name: str,
+<     cm: "CheckpointManager",
+<     *,
+<     force: bool = False,
+< ) -> bool:
+<     """Return True if preservation checkpoint *name* should be (re)written."""
+<     if name not in PRESERVATION_CHECKPOINT_NAMES:
+<         return False
+<     if force:
+<         return True
+<     return not (cm.dir / f"{name}.parquet").exists()
+<
+<
+< def _config_hash() -> str:
+<     path = CONFIG_DIR / "settings.yaml"
+<     if not path.exists():
+<         return "no-config"
+<     return hashlib.md5(path.read_bytes()).hexdigest()[:8]
+<
+<
+56c20
+<     """Parquet checkpoints for DataFrames; joblib checkpoints for models."""
+---
+>     """Simple DataFrame checkpoint reader/writer using parquet format."""
+58,64c22,24
+<     def __init__(self, checkpoint_dir: Path | None = None) -> None:
+<         if checkpoint_dir is not None:
+<             self.dir = checkpoint_dir
+<         else:
+<             env_override = os.environ.get("TC_CHECKPOINT_DIR")
+<             self.dir = Path(env_override) if env_override else CHECKPOINT_DIR
+<         self.dir.mkdir(parents=True, exist_ok=True)
+---
+>     def __init__(self, checkpoint_dir: Path | None = None):
+>         self.checkpoint_dir = checkpoint_dir or CHECKPOINT_DIR
+>         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+66c26,27
+<     # ── DataFrame checkpoints ─────────────────────────────────────────
+---
+>     def _data_path(self, name: str) -> Path:
+>         return self.checkpoint_dir / f"{name}.parquet"
+68,84c29,30
+<     def save(self, df: pd.DataFrame, name: str) -> Path:
+<         parquet_path = self.dir / f"{name}.parquet"
+<         meta_path = self.dir / f"{name}.meta.json"
+<         df.to_parquet(parquet_path)
+<         meta = {
+<             "name": name,
+<             "created": datetime.now().isoformat(),
+<             "config_hash": _config_hash(),
+<             "rows": len(df),
+<             "columns": len(df.columns),
+<             "col_names": list(df.columns),
+<             "index_start": str(df.index[0]) if len(df) else None,
+<             "index_end": str(df.index[-1]) if len(df) else None,
+<         }
+<         meta_path.write_text(json.dumps(meta, indent=2))
+<         log.info("Checkpoint saved: %s  (%d rows × %d cols)", name, len(df), len(df.columns))
+<         return parquet_path
+---
+>     def _meta_path(self, name: str) -> Path:
+>         return self.checkpoint_dir / f"{name}.meta.json"
+86,92c32,36
+<     def load(self, name: str) -> pd.DataFrame:
+<         parquet_path = self.dir / f"{name}.parquet"
+<         if not parquet_path.exists():
+<             raise FileNotFoundError(f"Checkpoint not found: {parquet_path}")
+<         df = pd.read_parquet(parquet_path)
+<         log.info("Checkpoint loaded: %s  (%d rows × %d cols)", name, len(df), len(df.columns))
+<         return df
+---
+>     def save(self, df: pd.DataFrame, name: str, metadata: dict[str, Any] | None = None) -> Path:
+>         """Persist *df* under *name* and write a lightweight metadata sidecar."""
+>         data_path = self._data_path(name)
+>         meta_path = self._meta_path(name)
+>         df.to_parquet(data_path)
+94,118c38,42
+<     def is_fresh(
+<         self,
+<         name: str,
+<         max_age_days: float = 7.0,
+<         require_config_match: bool = False,
+<     ) -> bool:
+<         parquet_path = self.dir / f"{name}.parquet"
+<         meta_path = self.dir / f"{name}.meta.json"
+<         if not parquet_path.exists() or not meta_path.exists():
+<             log.debug("Checkpoint missing: %s", name)
+<             return False
+<         try:
+<             meta = json.loads(meta_path.read_text())
+<             created = datetime.fromisoformat(meta["created"])
+<         except (json.JSONDecodeError, KeyError, ValueError) as exc:
+<             log.warning("Corrupt checkpoint metadata %s: %s", meta_path.name, exc)
+<             return False
+<         age = datetime.now() - created
+<         if age > timedelta(days=max_age_days):
+<             log.info("Checkpoint stale: %s (%.1f days old)", name, age.total_seconds() / 86400)
+<             return False
+<         if require_config_match and meta.get("config_hash") != _config_hash():
+<             log.info("Checkpoint config mismatch: %s", name)
+<             return False
+<         return True
+---
+>         payload: dict[str, Any] = {"created": datetime.now(timezone.utc).isoformat()}
+>         if metadata:
+>             payload["metadata"] = metadata
+>         meta_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+>         return data_path
+120,181c44,49
+<     def clear(self, name: str) -> None:
+<         for suffix in [".parquet", ".meta.json"]:
+<             p = self.dir / f"{name}{suffix}"
+<             if p.exists():
+<                 p.unlink()
+<                 log.info("Cleared checkpoint: %s", p.name)
+<
+<     def clear_all(self, *, include_preservation: bool = False) -> None:
+<         for f in self.dir.iterdir():
+<             if not include_preservation:
+<                 stem = f.stem
+<                 if stem.endswith(".meta"):
+<                     stem = stem[: -len(".meta")]
+<                 if stem in PRESERVATION_CHECKPOINT_NAMES:
+<                     continue
+<             f.unlink()
+<         log.info(
+<             "All checkpoints cleared%s",
+<             "" if include_preservation else " (preservation checkpoints kept)",
+<         )
+<
+<     def list(self) -> list[dict]:
+<         entries = []
+<         for meta_path in sorted(self.dir.glob("*.meta.json")):
+<             try:
+<                 entries.append(json.loads(meta_path.read_text()))
+<             except Exception as exc:
+<                 log.warning("Failed to parse checkpoint metadata %s: %s", meta_path.name, exc)
+<         entries.sort(key=lambda m: m.get("created", ""))
+<         return entries
+<
+<     def summary(self) -> str:
+<         entries = self.list()
+<         if not entries:
+<             return "No checkpoints found."
+<         lines = [f"{'Name':<30} {'Created':<25} {'Shape':<12} {'Config'}", "-" * 80]
+<         for m in entries:
+<             shape = f"{m.get('rows','?')}×{m.get('columns','?')}"
+<             lines.append(
+<                 f"{m['name']:<30} {m['created'][:19]:<25} {shape:<12} {m.get('config_hash','?')}"
+<             )
+<         return "\n".join(lines)
+<
+<     # ── Model checkpoints ─────────────────────────────────────────────
+<
+<     def save_model(self, model: Any, name: str) -> Path:
+<         pkl_path = self.dir / f"{name}.pkl"
+<         joblib.dump(model, pkl_path)
+<         log.info("Model checkpoint saved: %s", name)
+<         return pkl_path
+<
+<     def load_model(self, name: str) -> Any:
+<         pkl_path = self.dir / f"{name}.pkl"
+<         if not pkl_path.exists():
+<             raise FileNotFoundError(f"Model checkpoint not found: {pkl_path}")
+<         model = joblib.load(pkl_path)
+<         log.info("Model checkpoint loaded: %s", name)
+<         return model
+<
+<     def model_exists(self, name: str) -> bool:
+<         return (self.dir / f"{name}.pkl").exists()
+<
+---
+>     def load(self, name: str) -> pd.DataFrame:
+>         """Load a previously saved dataframe checkpoint by *name*."""
+>         data_path = self._data_path(name)
+>         if not data_path.exists():
+>             raise FileNotFoundError(f"Checkpoint not found: {data_path}")
+>         return pd.read_parquet(data_path)
+diff -r ./backup_trading_crab_20260419_001/src/trading_crab_lib/config.py ./backup_trading_crab_cursor_20260419_001/src/trading_crab_lib/config.py
+39c39
+<         with open(path) as f:
+---
+>         with open(path, encoding="utf-8") as f:
+diff -r ./backup_trading_crab_20260419_001/src/trading_crab_lib/plotting/core.py ./backup_trading_crab_cursor_20260419_001/src/trading_crab_lib/plotting/core.py
+30d29
+<     import matplotlib.ticker as mticker
+37,39d35
+< import numpy as np
+< import pandas as pd
+<
+132c128
+<         return "No plots found in %s" % d
+---
+>         return f"No plots found in {d}"
+
