@@ -40,4 +40,3 @@ __all__ = [
     "load_or_generate",
     "list_available_plots",
 ]
-

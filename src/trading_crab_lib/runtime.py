@@ -61,13 +61,20 @@ class RunConfig:
 
     def __str__(self) -> str:
         flags = []
-        if self.verbose:            flags.append("verbose")
-        if self.generate_plots:     flags.append("plots")
-        if self.generate_pairplot:  flags.append("pairplot")
-        if self.refresh_source_datasets:    flags.append("refresh")
-        if self.recompute_derived_datasets: flags.append("recompute")
-        if self.refresh_asset_prices:       flags.append("refresh-assets")
-        if self.refresh_preservation_checkpoints: flags.append("refresh-preservation")
-        if self.market_code_source: flags.append(f"market_code={self.market_code_source}")
+        if self.verbose:
+            flags.append("verbose")
+        if self.generate_plots:
+            flags.append("plots")
+        if self.generate_pairplot:
+            flags.append("pairplot")
+        if self.refresh_source_datasets:
+            flags.append("refresh")
+        if self.recompute_derived_datasets:
+            flags.append("recompute")
+        if self.refresh_asset_prices:
+            flags.append("refresh-assets")
+        if self.refresh_preservation_checkpoints:
+            flags.append("refresh-preservation")
+        if self.market_code_source:
+            flags.append(f"market_code={self.market_code_source}")
         return f"RunConfig({', '.join(flags) or 'defaults'})"
-

@@ -19,6 +19,7 @@ def run_pipeline() -> None:
     Delegates to ``trading_crab.pipeline.main()``.
     """
     from trading_crab.pipeline import main
+
     main()
 
 
@@ -42,4 +43,3 @@ def publish_notebooks() -> None:
     .. note:: Stub — full implementation deferred to Q8.
     """
     print("tradingcrab-publish: notebook publishing (stub — not yet implemented)")
-

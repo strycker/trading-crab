@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     # "Programming Language :: Python :: 3.11",
     # "Programming Language :: Python :: 3.12",
-    # "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business :: Financial :: Investment",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
@@ -76,3 +76,14 @@ warn_unused_configs = true
 # uv workspace: editable-installs both packages with a single `uv sync`
 [tool.uv.workspace]
 members = ["src/trading_crab_lib"]
+
+[tool.ruff]
+line-length = 127
+target-version = "py310"
+# Exclude legacy directories and notebooks for now
+exclude = ["legacy", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# Exclude legacy directories and notebooks for now
+exclude = ["legacy", "notebooks"]

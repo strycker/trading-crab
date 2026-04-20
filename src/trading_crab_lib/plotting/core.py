@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 def _in_jupyter() -> bool:
     try:
         from IPython import get_ipython  # type: ignore[import]
+
         return get_ipython() is not None
     except ImportError:
         return False
@@ -23,15 +24,15 @@ def _in_jupyter() -> bool:
 
 try:
     import matplotlib
+
     if not _in_jupyter():
         matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
     import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
     # import matplotlib.ticker as mticker
 except ImportError as _matplotlib_err:
     raise ImportError(
-        "matplotlib is required for plotting functions. "
-        "Install with: pip install 'trading-crab-lib[plotting]'"
+        "matplotlib is required for plotting functions. Install with: pip install 'trading-crab-lib[plotting]'"
     ) from _matplotlib_err
 
 # import numpy as np
@@ -109,6 +110,7 @@ def load_or_generate(
         if _in_jupyter():
             try:
                 from IPython.display import Image, display  # type: ignore[import]
+
                 display(Image(filename=str(png_path)))
             except ImportError:
                 log.warning("IPython not available — regenerating plot")
@@ -144,4 +146,3 @@ def list_available_plots(plot_dir: Path | None = None) -> str:
 
     lines.append(f"\nTotal: {len(pngs)} plots")
     return "\n".join(lines)
-

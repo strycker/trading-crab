@@ -7,8 +7,8 @@ Full implementation (validate_config, load_portfolio, setup_logging) added in S1
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -45,4 +45,3 @@ def load(
     cfg.setdefault("fred", {})["api_key"] = fred_key
 
     return cfg
-

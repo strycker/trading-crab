@@ -34,17 +34,21 @@ OUTPUT_DIR = _resolve_dir("TC_OUTPUT_DIR", ROOT / "outputs")
 
 # ── Convenience re-exports ──────────────────────────────────────────
 
+
 def load(*args, **kwargs) -> dict:
     """Shortcut for :func:`trading_crab_lib.config.load`."""
     from trading_crab_lib.config import load as _load
+
     return _load(*args, **kwargs)
 
 
 def __getattr__(name: str):
     if name == "RunConfig":
         from trading_crab_lib.runtime import RunConfig
+
         return RunConfig
     if name == "CheckpointManager":
         from trading_crab_lib.checkpoints import CheckpointManager
+
         return CheckpointManager
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

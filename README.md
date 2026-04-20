@@ -1,6 +1,6 @@
 # Trading-Crab
 
-![Python](https://img.shields.io/badge/python-3.10-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Market regime classification and prediction pipeline.
@@ -78,48 +78,6 @@ Here are some helpful links for studying what we're about to do:
 <br>
 <br>
 
-## Two Packages
-
-|
- Package
-|
- pip name
-|
- What it provides
-|
-|
----
-|
----
-|
----
-|
-|
-`src/trading_crab_lib/`
-|
-**
-`trading-crab-lib`
-**
-|
- Library: transforms, clustering, prediction, reporting, plotting, ingestion
-|
-|
-`src/trading_crab/`
-|
-**
-`trading-crab`
-**
-|
- Application: CLI (
-`tradingcrab`
-) + pipeline orchestration
-|
-
-`trading-crab` depends on `trading-crab-lib`. The library can be used standalone.
-
-<br>
-<br>
-
 ## Quick Start
 
 ```bash
@@ -135,13 +93,13 @@ cp .env.example .env
 
 # 3. Run the pipeline
 tradingcrab --refresh --recompute --plots
+```
 
 <br>
 <br>
 
 ## Repository Structure
 
-```
 trading_crab/
 ├── README.md
 ├── requirements.txt
@@ -169,7 +127,7 @@ trading_crab/
 │   ├── 02_clustering.ipynb
 │   └── 03_regime_analysis.ipynb
 └── data/                   # Pickle/CSV checkpoints (gitignored)
-```
+
 
 ## Usage
 

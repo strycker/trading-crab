@@ -6,4 +6,3 @@ The library code lives in ``trading_crab_lib``.
 """
 
 __version__ = "0.1.2"
-

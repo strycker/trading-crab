@@ -1,5 +1,6 @@
 .PHONY: help setup setup-dev install install-dev test test-fast run run-full \
-	run-cluster dashboard notebooks clean-outputs clean-models clean-all
+	run-cluster dashboard notebooks clean-outputs clean-models clean-all \
+	ruff lint fmt build all
 
 help:
 	@echo ""
@@ -23,6 +24,12 @@ help:
 	@echo "  make clean-models   Remove saved models"
 	@echo "  make clean-all      Remove all generated files (keep raw checkpoints)"
 	@echo ""
+	@echo "  make ruff           Run ruff lint checks (src + tests)"
+	@echo "  make lint           Alias for ruff checks"
+	@echo "  make fmt            Auto-fix + format with ruff"
+	@echo "  make build          Build app + lib dists into ./dist"
+	@echo "  make all            Run lint + tests + build"
+	@echo ""
 
 # ── setup ──────────────────────────────────────────────────────────────────────
 
@@ -39,6 +46,7 @@ install:
 install-dev:
 	pip install -e "src/trading_crab_lib/[all,dev]"
 	pip install -e ".[dev]"
+	pip install ruff build
 
 # ── testing ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +55,25 @@ test:
 
 test-fast:
 	pytest tests/ -x -q
+
+# ── lint / format / build ─────────────────────────────────────────────────────
+
+ruff:
+	ruff check src tests
+
+lint: ruff
+
+fmt:
+	ruff check src tests --fix
+	ruff format src tests
+
+build:
+	python -m pip install --upgrade pip
+	python -m pip install build
+	python -m build . --outdir dist
+	python -m build ./src/trading_crab_lib --outdir dist
+
+all: lint test build
 
 # ── pipeline ───────────────────────────────────────────────────────────────────
 

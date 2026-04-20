@@ -27,6 +27,8 @@ def _synthesize_macro_raw(session_dir: Path) -> None:
     n = 100
     idx = pd.date_range("2000-03-31", periods=n, freq="QE")
     sp500 = np.abs(rng.uniform(300, 5000, n)) + 200
+
+    # fmt: off
     data: dict[str, np.ndarray] = {
         "sp500":        sp500,
         "sp500_adj":    sp500 * rng.uniform(0.95, 1.05, n),
@@ -54,6 +56,7 @@ def _synthesize_macro_raw(session_dir: Path) -> None:
         "fred_gs2":     rng.uniform(0.01, 10.0, n),
         "market_code":  np.zeros(n, dtype=float),
     }
+    # fmt: on
     df = pd.DataFrame(data, index=idx)
     df.index.name = "date"
     cm = ckpt_mod.CheckpointManager(checkpoint_dir=session_dir)
@@ -66,6 +69,7 @@ def _synthesize_asset_prices(session_dir: Path) -> None:
 
     try:
         from trading_crab_lib.config import load as _load_cfg
+
         cfg = _load_cfg()
         tickers = [str(t).upper() for t in cfg["assets"]["etfs"]][:8]
     except Exception:
@@ -117,6 +121,7 @@ def _isolated_checkpoint_dir(tmp_path_factory: pytest.TempPathFactory):
 # Basic data fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def quarterly_index():
     """20 quarter-end dates starting 2000-Q1."""
@@ -128,6 +133,7 @@ def raw_macro_df(quarterly_index):
     """Minimal macro DataFrame with all columns needed by add_cross_ratios."""
     rng = np.random.default_rng(0)
     n = len(quarterly_index)
+    # fmt: off
     return pd.DataFrame(
         {
             "sp500":     rng.uniform(800, 4000, n),
@@ -144,6 +150,7 @@ def raw_macro_df(quarterly_index):
         },
         index=quarterly_index,
     )
+    # fmt: on
 
 
 @pytest.fixture
@@ -169,4 +176,3 @@ def asset_prices(quarterly_index):
         },
         index=quarterly_index,
     )
-

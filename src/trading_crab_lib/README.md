@@ -1,6 +1,6 @@
 # trading-crab-lib
 
-![Python](https://img.shields.io/badge/python-3.10-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Library for market regime classification and prediction pipeline.
