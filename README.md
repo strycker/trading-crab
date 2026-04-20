@@ -15,7 +15,7 @@ Classifies each calendar quarter with a macro regime (e.g. Stagflation, Growth B
 
 <br>
 
-![Glenn with crab 2025](/images/glenn_with_crab_2025_300x400.png)
+![Glenn with crab 2025](https://github.com/strycker/trading-crab/blob/main/images/glenn_with_crab_2025_300x400.png)
 
 <br>
 
