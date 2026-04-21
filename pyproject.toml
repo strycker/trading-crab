@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-crab"
-version = "0.1.3"
+version = "0.1.4"
 description = "Market regime classification pipeline — CLI and pipeline orchestration"
 readme = "README.md"
 license = {text = "MIT"}
@@ -87,3 +87,6 @@ exclude = ["legacy", "notebooks"]
 select = ["E", "F", "W", "I"]
 # Exclude legacy directories and notebooks for now
 exclude = ["legacy", "notebooks"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2  # Adjust to 1 or 2 as preferred

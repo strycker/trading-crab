@@ -48,7 +48,9 @@ class RunConfig:
             refresh_source_datasets=getattr(args, "refresh", False),
             recompute_derived_datasets=getattr(args, "recompute", False),
             refresh_asset_prices=getattr(args, "refresh_assets", False),
-            refresh_preservation_checkpoints=getattr(args, "refresh_preservation", False),
+            refresh_preservation_checkpoints=getattr(
+                args, "refresh_preservation", False
+            ),
             use_constrained_kmeans=not getattr(args, "no_constrained", False),
             market_code_source=getattr(args, "market_code", None),
             drop_incomplete_tail=not getattr(args, "no_drop_tail", False),

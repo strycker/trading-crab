@@ -29,6 +29,7 @@ try:
         matplotlib.use("Agg")
     import matplotlib.colors as mcolors
     import matplotlib.pyplot as plt
+
     # import matplotlib.ticker as mticker
 except ImportError as _matplotlib_err:
     raise ImportError(
@@ -141,7 +142,9 @@ def list_available_plots(plot_dir: Path | None = None) -> str:
         stat = p.stat()
         mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         size_kb = stat.st_size / 1024
-        size_str = f"{size_kb / 1024:.1f} MB" if size_kb >= 1024 else f"{size_kb:.1f} KB"
+        size_str = (
+            f"{size_kb / 1024:.1f} MB" if size_kb >= 1024 else f"{size_kb:.1f} KB"
+        )
         lines.append(f"{p.name:<50} {mtime:<22} {size_str:>10}")
 
     lines.append(f"\nTotal: {len(pngs)} plots")

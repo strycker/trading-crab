@@ -29,7 +29,9 @@ class CheckpointManager:
     def _meta_path(self, name: str) -> Path:
         return self.checkpoint_dir / f"{name}.meta.json"
 
-    def save(self, df: pd.DataFrame, name: str, metadata: dict[str, Any] | None = None) -> Path:
+    def save(
+        self, df: pd.DataFrame, name: str, metadata: dict[str, Any] | None = None
+    ) -> Path:
         """Persist *df* under *name* and write a lightweight metadata sidecar."""
         data_path = self._data_path(name)
         meta_path = self._meta_path(name)
