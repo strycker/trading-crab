@@ -1,8 +1,9 @@
 """Where the checkout lives: ``root()``, ``data_dir()``, ``outputs_dir()``, ``config_path()``.
 
 ``root()`` is ``$TC_ROOT_DIR`` when set, else the nearest folder at or above the current directory that holds
-``config/platform_settings.yaml``. Every function resolves on each call, never at import time, so an installed
-wheel and each test (``TC_ROOT_DIR=tmp_path``) find the right tree.
+``config/platform_settings.yaml``. ``TC_ROOT_DIR`` is a shell variable only: ``.env`` is not read to find the root
+(``.env`` is found through it), so never put it there. Every function resolves on each call, never at import time,
+so an installed wheel and each test (``TC_ROOT_DIR=tmp_path``) find the right tree.
 
 Usage::
 
