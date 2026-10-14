@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 
 import pandas as pd
@@ -74,7 +75,7 @@ def test_render_shows_run_date_data_through_and_the_backdrop():
 
 def test_render_lists_the_mix_in_config_order_then_cash_with_the_total():
     lines = _page(date(2024, 3, 4)).splitlines()
-    rows = [line for line in lines if line.startswith("| ") and line.endswith("% |")]
+    rows = [line for line in lines if re.fullmatch(r"\| \w+ \| [0-9.]+% \|", line)]
     assert rows == [
         "| SPY | 25.0% |",
         "| TLT | 35.0% |",
