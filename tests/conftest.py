@@ -59,8 +59,8 @@ class FakeHttp:
 
     FRED: observations dated the 1st, 1993-01 to the month before ``today``, one ``"."`` (1993-11). Tiingo: business
     days from 2004-01-02 to the requested ``endDate``. ``fail[name]`` makes one series fail: ``"error"`` (an HTTP
-    error whose text carries the request, FRED's key included, as requests' own messages do), ``"empty"`` or
-    ``"crash"`` (prices fall 95% in June 2010).
+    error whose text carries the request, FRED's key included, as requests' own messages do), ``"empty"``,
+    ``"crash"`` (prices fall 95% in June 2010) or ``"late"`` (the last complete month is not published yet).
     """
 
     today = pd.Timestamp("2026-10-14")
@@ -80,15 +80,20 @@ class FakeHttp:
         if mode == "empty":
             return {"observations": []} if fred else []
         rng = np.random.default_rng([0, zlib.crc32(name.encode())])
+        last_month = (self.today.to_period("M") - 1).to_timestamp()  # the last complete month's first day
         if fred:
-            months = pd.date_range("1993-01-01", (self.today.to_period("M") - 1).to_timestamp(), freq="MS")
+            months = pd.date_range("1993-01-01", last_month, freq="MS")
             values = [f"{v:.2f}" for v in 5 + np.cumsum(rng.normal(0, 0.1, len(months)))]
             values[10] = "."
+            if mode == "late":
+                months, values = months[:-1], values[:-1]
             return {"observations": [{"date": f"{d:%Y-%m-%d}", "value": v} for d, v in zip(months, values)]}
         days = pd.bdate_range("2004-01-02", params["endDate"])
         prices = 100 * np.exp(np.cumsum(rng.normal(0.0003, 0.01, len(days))))
         if mode == "crash":
             prices[days >= "2010-06-15"] *= 0.05
+        if mode == "late":
+            days, prices = days[days < last_month], prices[days < last_month]
         return [{"date": f"{d:%Y-%m-%d}T00:00:00.000Z", "close": p, "adjClose": p} for d, p in zip(days, prices)]
 
 

@@ -10,6 +10,7 @@ import pytest
 
 from trading_crab.cli import main
 from trading_crab_lib.platform import features, ingest, report
+from trading_crab_lib.platform.allocate import target_weights
 from trading_crab_lib.platform.config import load
 from trading_crab_lib.platform.report import render
 
@@ -32,7 +33,8 @@ def test_build_then_weekly_writes_the_page(tc_root, fixed_build, fake_keys, caps
     weekly = capsys.readouterr()
     assert weekly.out.splitlines()[0].startswith("Code:")
     page = (tc_root / "outputs" / "reports" / "weekly_report.md").read_text()
-    assert "Data through month-end 2026-09-30 (latest complete month)" in page
+    assert "Data through month-end 2026-09-30 (the latest month-end with every series)" in page
+    assert "Missing at month-end" not in page  # every series reached September
     assert page.splitlines()[2].startswith("Code:")
     for text in (built.out, built.err, weekly.out, weekly.err, page):
         assert not any(key in text for key in fake_keys.values())
@@ -69,7 +71,8 @@ def _page(run_date: date) -> str:
 def test_render_shows_run_date_data_through_and_the_backdrop():
     page = _page(date(2024, 3, 4))
     assert "Run date: 2024-03-04" in page
-    assert "Data through month-end 2024-02-29 (latest complete month)" in page
+    assert "Data through month-end 2024-01-31 (the latest month-end with every series)" in page  # gs10 is late
+    assert "Missing at month-end 2024-02-29: gs10" in page
     assert "| curve_10y3m | 0.5000 | 2024-01-31 |" in page  # each value carries its own as-of date
     assert "| spy_ret_12m (market context) | 0.5000 | 2024-01-31 |" in page
 
@@ -94,6 +97,7 @@ def test_stale_banner_past_max_age_only():
     assert load()["report"]["max_age_days"] == 45
     assert "**STALE:**" in _page(date(2024, 2, 29) + timedelta(days=60))
     assert "STALE" not in _page(date(2024, 2, 29) + timedelta(days=10))
+    assert "**STALE:** the data is 49 days old" in _page(date(2024, 3, 20))  # aged from 01-31, the date every series has
 
 
 def test_two_renders_with_the_same_inputs_are_identical():
@@ -133,3 +137,36 @@ def test_weekly_refuses_data_built_with_another_lag_table(tc_root, fixed_build, 
     assert main(["weekly"]) == 1
     assert "tradingcrab build" in capsys.readouterr().err
     assert not (tc_root / "outputs" / "reports" / "weekly_report.md").exists()
+
+
+
+def _mix(cfg: dict, prices: pd.DataFrame) -> pd.Series:
+    """``target_weights`` with the config's allocation settings."""
+    return target_weights(prices, window=cfg["allocation"]["vol_window"], vol_target=cfg["allocation"]["vol_target"])
+
+
+def test_a_late_fred_series_moves_the_data_date_back_and_is_named(tc_root, fixed_build):
+    fixed_build.fail["GS10"] = "late"  # FRED has not published September's 10-year yield yet
+    assert main(["build"]) == 0 and main(["weekly"]) == 0
+    page = (tc_root / "outputs" / "reports" / "weekly_report.md").read_text()
+    assert "Data through month-end 2026-08-31 (the latest month-end with every series)" in page
+    assert "Missing at month-end 2026-09-30: gs10" in page
+    cfg = load()
+    raw, _, weights = report.inputs(cfg)
+    tickers = cfg["tickers"]
+    pd.testing.assert_series_equal(weights, _mix(cfg, raw.loc[:"2026-08-31", tickers]), rtol=1e-9, atol=0)
+    assert not weights.equals(_mix(cfg, raw[tickers]))  # every ticker has September, yet the mix is as of the page's date
+
+
+def test_a_late_ticker_gives_weights_as_of_the_pages_date(tc_root, fixed_build):
+    fixed_build.fail["USO"] = "late"  # Tiingo has no September month-end for USO
+    assert main(["build"]) == 0 and main(["weekly"]) == 0
+    page = (tc_root / "outputs" / "reports" / "weekly_report.md").read_text()
+    assert "Data through month-end 2026-08-31 (the latest month-end with every series)" in page
+    assert "Missing at month-end 2026-09-30: USO" in page
+    cfg = load()
+    raw, _, weights = report.inputs(cfg)
+    tickers = cfg["tickers"]
+    pd.testing.assert_series_equal(weights, _mix(cfg, raw.loc[:"2026-08-31", tickers]), rtol=1e-9, atol=0)
+    with pytest.raises(ValueError, match="USO"):  # allocate refuses a missing last month rather than dropping it
+        _mix(cfg, raw[tickers])
