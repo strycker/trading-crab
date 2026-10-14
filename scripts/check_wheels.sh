@@ -12,11 +12,12 @@ trap 'rm -rf "$tmp"' EXIT
 cd "$tmp"   # leave the checkout, or the repo itself would satisfy the imports
 "$tmp/venv/bin/python" -I - "$app_dist" <<'PY'
 import glob, sys, zipfile
-import trading_crab, trading_crab_lib.platform as platform_pkg
-for mod in (trading_crab, platform_pkg):
+import trading_crab, trading_crab_lib.platform.report as report
+for mod in (trading_crab, report):
     assert "site-packages" in mod.__file__, f"{mod.__name__} imported from {mod.__file__}, not the installed wheel"
 wheel = zipfile.ZipFile(glob.glob(sys.argv[1] + "/*.whl")[0])
 meta = wheel.read(next(n for n in wheel.namelist() if n.endswith(".dist-info/METADATA"))).decode()
 assert "Requires-Dist: trading-crab-lib" in meta, "the app wheel does not require trading-crab-lib"
 print("check_wheels: both wheels install and import from site-packages; the app requires the lib")
 PY
+"$tmp/venv/bin/tradingcrab" --help   # the installed console script runs and prints its code line first

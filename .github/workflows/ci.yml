@@ -1,10 +1,9 @@
 name: CI
 
+# One run per pushed commit; a PR shows the checks of its head commit. No secrets anywhere in CI.
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    branches: ["main", "claude/**"]
 
 permissions:
   contents: read
@@ -19,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]  # minimum + newest supported
+        python-version: ["3.10", "3.13"]  # minimum (resolves pandas 2) and newest (resolves pandas 3)
 
     steps:
       - name: Checkout
@@ -32,25 +31,20 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            src/trading_crab_lib/pyproject.toml
 
-      - name: Install dependencies
+      - name: Install both packages
         run: |
           python -m pip install --upgrade pip
-          pip install -e "src/trading_crab_lib[all,dev]"
-          pip install -e ".[dev]"
-          pip install ruff mypy
+          pip install -e src/trading_crab_lib -e ".[dev]"
 
       - name: Lint (ruff)
-        run: |
-          ruff check src tests
+        run: ruff check src tests
 
       - name: Test
-        run: |
-          pytest tests/ -v --tb=short
-
-      - name: Type check (informational for now)
-        run: |
-          mypy src/trading_crab src/trading_crab_lib --ignore-missing-imports --no-error-summary || true
+        run: pytest tests -q -p no:cacheprovider
 
   build-distributions:
     runs-on: ubuntu-latest
@@ -67,7 +61,9 @@ jobs:
 
       - name: Build both packages
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install build
+          python -m pip install --upgrade pip build
           python -m build . --outdir dist-app
-          python -m build ./src/trading_crab_lib --outdir dist-lib
+          python -m build src/trading_crab_lib --outdir dist-lib
+
+      - name: Install the wheels in a fresh venv and import them from site-packages
+        run: bash scripts/check_wheels.sh dist-lib dist-app
