@@ -18,8 +18,12 @@ import pandas as pd
 def target_weights(prices: pd.DataFrame, *, window: int, vol_target: float) -> pd.Series:
     """Weights for ``prices``' columns (in order) plus ``"cash"``; all >= 0, summing to 1.
 
-    Raises ``ValueError`` with fewer than ``window`` complete month-end returns, or an asset with no volatility.
+    Raises ``ValueError`` when an asset has no price at the last month-end (cut the frame first; never a silent
+    older mix), with fewer than ``window`` complete month-end returns, or an asset with no volatility.
     """
+    late = prices.columns[prices.iloc[-1].isna()]
+    if len(late):
+        raise ValueError(f"no price at month-end {prices.index[-1]:%Y-%m-%d} for: {', '.join(map(str, late))}")
     returns = prices.pct_change(fill_method=None).dropna()
     if len(returns) < window:
         raise ValueError(f"need {window} month-end returns, have {len(returns)}")

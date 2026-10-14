@@ -2,6 +2,8 @@
 
 The page: code line, run date, data-through date, a STALE banner past ``report.max_age_days``, the target mix (M3),
 the regime and scoreboard placeholders, then the causal backdrop (M2). No performance number (CONTEXT D-07).
+The data-through date is ``complete_through(raw)``, the latest month-end where every series has a value; the age
+and the mix use it too, and the page names any series missing at the latest month-end.
 
 This is the one module that reads past the holdout cutoff (``include_holdout=True``): the page is live scoring,
 and the fence is on fitting, not looking (DECISIONS H-02). It refuses data built with a different
@@ -30,20 +32,27 @@ from trading_crab_lib.platform.paths import outputs_dir
 _LABELS = {"spy_ret_12m": "spy_ret_12m (market context)"}  # SPY's own return, not a result of any strategy
 
 
+def complete_through(raw: pd.DataFrame) -> pd.Timestamp:
+    """The latest month-end where every column of ``raw`` has a value."""
+    return raw.dropna().index.max()
+
+
 def inputs(cfg: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """``(raw, backdrop, weights)`` from the build: every row, the five features and the target mix."""
+    """``(raw, backdrop, weights)`` from the build: every row, the five features and the mix as of ``complete_through``."""
     if checkpoints.load_meta("monthly_raw")["meta"].get("publication_lags") != cfg["publication_lags"]:
         raise ConfigError("monthly_raw was built with a different publication_lags table: run tradingcrab build")
     raw = checkpoints.load("monthly_raw", include_holdout=True)
     allocation = cfg["allocation"]
-    weights = target_weights(raw[cfg["tickers"]], window=allocation["vol_window"], vol_target=allocation["vol_target"])
+    prices = raw.loc[: complete_through(raw), cfg["tickers"]]  # the one cut; dropping later rows adds no look-ahead
+    weights = target_weights(prices, window=allocation["vol_window"], vol_target=allocation["vol_target"])
     return raw, features.compute(raw), weights
 
 
 def render(raw: pd.DataFrame, backdrop: pd.DataFrame, weights: pd.Series, *, cfg: dict, code_line: str, run_date: date) -> str:
     """The page as Markdown; the same inputs and run date always give the same text."""
-    through, max_age = raw.index.max(), cfg["report"]["max_age_days"]
+    through, latest, max_age = complete_through(raw), raw.index.max(), cfg["report"]["max_age_days"]
     age = (pd.Timestamp(run_date) - through).days
+    missing = [str(column) for column in raw.columns if pd.isna(raw.loc[latest, column])]
     allocation = cfg["allocation"]
     lines = [
         "# Trading-Crab weekly page",
@@ -51,7 +60,8 @@ def render(raw: pd.DataFrame, backdrop: pd.DataFrame, weights: pd.Series, *, cfg
         code_line,
         "",
         f"Run date: {run_date:%Y-%m-%d}",
-        f"Data through month-end {through:%Y-%m-%d} (latest complete month)",
+        f"Data through month-end {through:%Y-%m-%d} (the latest month-end with every series)",
+        *([f"Missing at month-end {latest:%Y-%m-%d}: {', '.join(missing)}"] if missing else []),
         "",
     ]
     if age > max_age:
