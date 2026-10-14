@@ -29,3 +29,4 @@ def test_the_weekly_page_renders_from_the_real_build():
     page = report.run(load()).read_text(encoding="utf-8")
     assert page.splitlines()[2].startswith("Code:")
     assert "## Backdrop (causal features; they set no weight)" in page
+    assert "| Total | 100.0% |" in page
