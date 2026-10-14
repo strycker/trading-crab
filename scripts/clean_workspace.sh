@@ -11,6 +11,13 @@ if [[ ! -f pyproject.toml || ! -d src/trading_crab_lib/platform ]]; then
   exit 1
 fi
 
+# In a git checkout, note the tracked files already missing (the user's own deletions) before removing anything
+git_ls_deleted() { git -c core.quotePath=false ls-files --deleted | sort; }
+deleted_before=""
+if [[ -e .git ]]; then
+  deleted_before=$(git_ls_deleted)
+fi
+
 echo "clean_workspace: cleaning $root"
 rm -rf data outputs dist dist-app dist-lib build src/trading_crab_lib/build .pytest_cache .ruff_cache
 
@@ -19,13 +26,15 @@ find . \( -path ./legacy -o -path ./.venv -o -path ./.git \) -prune -o -type d \
   \( -name __pycache__ -o -name '*.egg-info' -o -name .ipynb_checkpoints -o -name .pytest_cache -o -name .ruff_cache \) \
   -prune -exec rm -rf {} +
 
-# In a git checkout, fail loudly if any tracked file is missing (this script must never cause that)
+# Fail loudly if this run removed a tracked file (it must never), naming only those files
 if [[ -e .git ]]; then
-  missing=$(git ls-files --deleted)
-  if [[ -n "$missing" ]]; then
-    echo "clean_workspace: tracked files are missing from the working tree:" >&2
-    echo "$missing" >&2
-    echo "Run: git restore ." >&2
+  removed=$(comm -13 <(printf '%s\n' "$deleted_before") <(git_ls_deleted))
+  if [[ -n "$removed" ]]; then
+    echo "clean_workspace: this run removed tracked files:" >&2
+    echo "$removed" >&2
+    printf 'Restore exactly those with: git restore --' >&2
+    while IFS= read -r path; do printf ' %q' "$path" >&2; done <<< "$removed"
+    printf '\n' >&2
     exit 1
   fi
 fi
