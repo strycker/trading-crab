@@ -23,8 +23,8 @@ def test_features_are_causal_by_truncation(raw):
     before = raw.copy()
     full = features.compute(raw)
     assert list(full.columns) == features.COLUMNS
-    months = raw.index[raw.index >= "2006-01-01"][::7]
-    assert len(months) > 20 and full.loc[months].notna().all().all()  # the comparison is on real values
+    months = raw.index[::7]  # from the first month, so a backfill into the warm-up rows is caught too
+    assert full.loc[months[months >= "2006-01-01"]].notna().all().all()  # from 2006 every feature has a value
     for t in months:  # a feature at t may use nothing after t
         pd.testing.assert_series_equal(features.compute(raw.loc[:t]).loc[t], full.loc[t], rtol=1e-9, atol=0)
     pd.testing.assert_frame_equal(raw, before)  # the input is untouched
