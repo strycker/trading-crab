@@ -16,9 +16,10 @@ from trading_crab_lib.platform.report import render
 
 @pytest.fixture
 def fixed_build(fake_http, monkeypatch):
-    """``tradingcrab build`` through ``fake_http`` on its fixed run date."""
-    real = ingest.build
-    monkeypatch.setattr(ingest, "build", lambda cfg: real(cfg, today=fake_http.today))
+    """``tradingcrab build`` through ``fake_http`` and ``tradingcrab weekly``, both on its fixed run date (no clock)."""
+    real_build, real_run = ingest.build, report.run
+    monkeypatch.setattr(ingest, "build", lambda cfg: real_build(cfg, today=fake_http.today))
+    monkeypatch.setattr(report, "run", lambda cfg: real_run(cfg, run_date=fake_http.today.date()))
     return fake_http
 
 
