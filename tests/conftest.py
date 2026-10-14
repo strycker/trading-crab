@@ -5,6 +5,8 @@
 - ``fake_http`` replaces the one HTTP seam (``ingest._get_json``) with deterministic FRED and Tiingo payloads.
 - A socket guard makes any network connection fail unless the test is marked ``network``.
 - The terminal summary prints the code line (G-16); unlike a report header, it survives ``-q``.
+- ``realdata`` tests read this checkout's own build (``TC_ROOT_DIR`` at the repo root): they skip without one, and
+  ``-m realdata`` without one is a usage error, so a run of skips can never pass the Mac gate.
 """
 
 from __future__ import annotations
@@ -23,12 +25,16 @@ import pytest
 from trading_crab_lib.platform import ingest
 
 REPO = Path(__file__).resolve().parents[1]
+BUILT = REPO / "data" / "checkpoints" / "monthly_raw.parquet"
 FRED_KEY, TIINGO_KEY = "test-fred-key-123", "test-tiingo-key-456"
 
 
 @pytest.fixture(autouse=True)
-def tc_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A fresh checkout root per test: config copied in, no data, no exported keys."""
+def tc_root(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A fresh checkout root per test: config copied in, no data, no exported keys; ``realdata`` tests get the repo."""
+    if request.node.get_closest_marker("realdata"):
+        monkeypatch.setenv("TC_ROOT_DIR", str(REPO))
+        return REPO
     (tmp_path / "config").mkdir()
     shutil.copy(REPO / "config" / "platform_settings.yaml", tmp_path / "config")
     monkeypatch.setenv("TC_ROOT_DIR", str(tmp_path))
@@ -102,6 +108,19 @@ def _no_network(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(socket.socket, "connect", guard)
     monkeypatch.setattr(socket.socket, "connect_ex", guard)
+
+
+@pytest.hookimpl(trylast=True)  # after `-m` deselection, so `-m "not realdata"` never raises
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip ``realdata`` tests without a build here; refuse ``-m realdata`` without one."""
+    marked = [item for item in items if item.get_closest_marker("realdata")]
+    if not marked or BUILT.is_file():
+        return
+    markexpr = config.getoption("markexpr") or ""
+    if "realdata" in markexpr and "not realdata" not in markexpr:
+        raise pytest.UsageError(f"-m realdata needs a real build at {BUILT}: run tradingcrab build first")
+    for item in marked:
+        item.add_marker(pytest.mark.skip(reason="no build: run tradingcrab build first"))
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus: int, config: pytest.Config) -> None:
