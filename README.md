@@ -39,6 +39,20 @@ pytest tests -q -p no:cacheprovider     # offline: synthetic data, no network, n
 ruff check src tests
 ```
 
+## Notebook
+
+`notebooks/E2E_skeleton.ipynb` walks the whole skeleton (build → features → weights → page) on this checkout's build.
+
+```bash
+pip install -e ".[notebook]"                      # the notebook extra, in the same venv
+tradingcrab build                                 # the notebook reads this build
+jupyter lab notebooks/E2E_skeleton.ipynb          # start Jupyter from the same venv
+```
+
+Run All, read it beside `outputs/reports/weekly_report.md`, then fill in the last cell (Sign-off: Date, Verdict,
+Reasoning). Strip the outputs before committing:
+`jupyter nbconvert --clear-output --inplace notebooks/E2E_skeleton.ipynb` (`tests/test_notebook.py` checks it).
+
 ## Rules
 
 - `CLAUDE.md`: KISS first, the honesty rules, hard rules and code conventions.
