@@ -3,7 +3,7 @@
 
 data:
   start_date: "1993-01-01"   # SPY's inception; one date serves both sources
-  end_date: null             # null means today (a hardcoded end date once ignored new data)
+  end_date: null             # the run date: null means today; a date builds as if run that day
 
 # FRED monthly series: column name -> FRED series id
 fred:
