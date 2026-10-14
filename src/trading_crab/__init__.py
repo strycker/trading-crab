@@ -1,8 +1,6 @@
-"""
-trading_crab — Market Regime Classification Pipeline (Application Layer)
+"""trading_crab: the ``tradingcrab`` command line (``trading_crab.cli``).
 
-This is the CLI and pipeline orchestration package.
-The library code lives in ``trading_crab_lib``.
+All logic lives in the library, ``trading_crab_lib.platform``; this package only parses arguments and prints.
 """
 
-__version__ = "0.1.4"
+from __future__ import annotations

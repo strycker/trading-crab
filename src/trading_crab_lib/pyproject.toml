@@ -4,38 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-crab-lib"
-version = "0.1.4"
-description = "Market regime classification library — transforms, clustering, prediction, reporting"
+version = "0.2.0"
+description = "Trading-Crab platform library: data build, features, allocation and the weekly page"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [{ name = "Strycker" }]
-keywords = ["finance", "clustering", "macroeconomics", "machine-learning", "time-series"]
+keywords = ["finance", "macroeconomics", "portfolio", "time-series"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Financial and Insurance Industry",
-    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.10",
-    # "Programming Language :: Python :: 3.11",
-    # "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business :: Financial :: Investment",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
-
-# Core deps: pure data science + ML — no network/API/viz
 dependencies = [
-    "pandas>=2.0",
-    "numpy>=1.25",
-    "pyarrow>=14.0",
-    "scikit-learn>=1.4",
-    "scipy>=1.11",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pyarrow>=14",
     "pyyaml>=6.0",
-    "joblib>=1.3",
     "python-dotenv>=1.0",
+    "requests>=2.31",
 ]
 
 [project.urls]
@@ -43,57 +35,11 @@ Homepage   = "https://github.com/strycker/trading-crab"
 Repository = "https://github.com/strycker/trading-crab"
 Issues     = "https://github.com/strycker/trading-crab/issues"
 
-[project.optional-dependencies]
-ingestion = [
-    "fredapi>=0.5",
-    "requests>=2.31",
-    "lxml>=4.9",
-    "beautifulsoup4>=4.12",
-    "yfinance>=0.2",
-    "certifi>=2024.0",
-]
-plotting = [
-    "matplotlib>=3.8",
-    "seaborn>=0.13",
-]
-hmm = [
-    "hmmlearn>=0.3",
-    "statsmodels>=0.14",
-]
-clustering-extras = [
-    "hdbscan>=0.8",
-    "kneed>=0.8",
-]
-boosting = [
-    "lightgbm>=4.0",
-]
-all = [
-    "trading-crab-lib[ingestion,plotting,hmm,clustering-extras,boosting]",
-]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov",
-    "flake8",
-]
-
-# pyproject.toml is at src/trading_crab_lib/ — look one level up (src/) for packages
-[tool.setuptools.packages.find]
-where   = [".."]
-include = ["trading_crab_lib*"]
+# The package IS this directory. The 0.1.x `packages.find where = [".."]` glob escaped the project root and
+# shipped an empty wheel, so every subpackage is listed by name: add one line per new subpackage.
+[tool.setuptools]
+package-dir = {"trading_crab_lib" = "."}
+packages = ["trading_crab_lib", "trading_crab_lib.platform"]
 
 [tool.setuptools.package-data]
 trading_crab_lib = ["py.typed"]
-
-[tool.ruff]
-line-length = 127
-target-version = "py310"
-# Exclude legacy directories and notebooks for now
-exclude = ["legacy", "notebooks"]
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I"]
-# Exclude legacy directories and notebooks for now
-exclude = ["legacy", "notebooks"]
-
-[tool.ruff.lint.isort]
-lines-after-imports = 2  # Adjust to 1 or 2 as preferred

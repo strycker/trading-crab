@@ -1,0 +1,40 @@
+# Trading-Crab platform settings: every tuneable value lives here (one file, read by trading_crab_lib.platform.config).
+# Secrets never live here: FRED_API_KEY and TIINGO_API_KEY come from the environment or .env.
+
+data:
+  start_date: "1993-01-01"   # SPY's inception; one date serves both sources
+  end_date: null             # null means today (a hardcoded end date once ignored new data)
+
+# FRED monthly series: column name -> FRED series id
+fred:
+  series:
+    gs10: GS10     # 10-year Treasury constant maturity, monthly average
+    tb3ms: TB3MS   # 3-month Treasury bill, monthly average
+    baa: BAA       # Moody's Baa corporate yield, monthly average
+    unrate: UNRATE # unemployment rate
+
+# Tiingo daily adjusted closes, resampled to complete month-ends
+tickers: [SPY, TLT, IAU, USO]
+
+# Months each column is shifted at ingestion so a value is used only once it was public.
+# Every column needs an entry; an unlisted column fails the build. Lowering a lag reopens look-ahead.
+publication_lags:
+  gs10: 0      # average of daily values, fully observed by the month's close
+  tb3ms: 0     # average of daily values, fully observed by the month's close
+  baa: 0       # average of daily values, fully observed by the month's close
+  unrate: 1    # BLS releases month m on the first Friday of m+1
+  SPY: 0       # month-end price, known at the close
+  TLT: 0       # month-end price, known at the close
+  IAU: 0       # month-end price, known at the close
+  USO: 0       # month-end price, known at the close
+
+# The locked 2021+ holdout: rows after the cutoff live in data/holdout/, read only by the weekly page
+holdout:
+  cutoff: "2020-12-31"   # quoted, or YAML loads a date
+
+allocation:
+  vol_window: 36     # month-end returns used for the volatility estimate
+  vol_target: 0.10   # annualised portfolio volatility target; the rest is cash
+
+report:
+  max_age_days: 45   # the page shows a STALE banner when the data is older than this

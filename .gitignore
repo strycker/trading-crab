@@ -1,49 +1,29 @@
-# Environment
+# Ignore by path, never by a broad name pattern: `*checkpoint*` once swallowed a source file (LEARNINGS).
+
+# Secrets: never commit
 .env
-*.env
+*.key
+
+# Generated: nothing generated is tracked (data/, outputs/, builds)
+/data/
+/outputs/
+/dist*/
+build/
+*.egg-info/
+*.pkl
+*.pickle
+
+# Python, venv and notebook caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
 .venv/
 venv/
-env/
-
-# Python
-__pycache__/
-*.pyc
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.eggs/
-
-# Jupyter
 .ipynb_checkpoints/
 
-# Data — never commit raw or generated data
-# but allow checkpoints.py of course!
-*checkpoint*
-!src/trading_crab_lib/checkpoints.py
-data/*.pickle
-data/*.csv
-data/*.xlsx
-data/raw/
-data/processed/
-data/regimes/
-data/checkpoints/
-outputs/plots/
-outputs/models/
-outputs/reports/
-
-# Secrets / API keys
-*.key
-config/secrets.yaml
-config/email.yaml
-config/email.local.yaml
-config/portfolio.local.yaml
-
-# OS
+# OS and editors
 .DS_Store
-Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp
