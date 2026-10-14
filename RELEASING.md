@@ -46,7 +46,8 @@ verify before you tag.
 
 Actions → **Publish to PyPI** → **Run workflow**: choose the branch and `package`, leave `target` at `testpypi` (the
 default). The run builds, checks and uploads to `https://test.pypi.org/legacy/` through the `testpypi` environment.
-It burns that version **on TestPyPI only**. Only an explicit `target: pypi` makes a manual run publish for real.
+It burns that version **on TestPyPI only**. A manual run with `target: pypi` reaches real PyPI only from a release
+tag, and only after Glenn approves it (§7.3).
 
 ## 5. The checks every selected leg passes before any upload
 
@@ -74,8 +75,10 @@ library is already up); never burn a new version for it.
    `trading-crab-lib`.
 2. **TestPyPI publishers.** The same on test.pypi.org with environment `testpypi`, for both projects (a "pending
    publisher" where the TestPyPI project does not exist yet).
-3. **GitHub environments.** strycker/trading-crab → Settings → Environments: create `pypi` (optionally with Glenn as
-   required reviewer, so every real publish waits for a click) and `testpypi`.
+3. **GitHub environments.** strycker/trading-crab → Settings → Environments: create `pypi` and `testpypi`. Both
+   `pypi` settings are **required**: Glenn as required reviewer, so every real publish waits for his click; and under
+   "Deployment branches and tags", "Selected branches and tags" with the tag rules `v*`, `lib-v*` and `both-v*`, so no
+   manual or branch run can reach real PyPI. Leave `testpypi` open for rehearsals.
 4. **Retire the old tokens.** Revoke `PYPI_APP_TOKEN` and `PYPI_LIB_TOKEN` on pypi.org and `TEST_PYPI_API_TOKEN` on
    test.pypi.org, then delete those three secrets in claude-scratch-work → Settings → Secrets and variables → Actions
    (and in its `pypi` environment, if stored there). The scratch repo no longer publishes.
