@@ -88,18 +88,42 @@ def test_every_source_file_is_tracked():
     assert [p for p in _src_py() if str(p.relative_to(REPO)) not in tracked] == []
 
 
-def test_clean_workspace_removes_generated_files_and_keeps_legacy(tmp_path):
+def _checkout(tmp_path: Path, files: tuple[str, ...]) -> None:
+    """A minimal git checkout holding clean_workspace.sh and ``files`` (each containing "x"), all committed."""
     (tmp_path / "scripts").mkdir()
     shutil.copy(REPO / "scripts" / "clean_workspace.sh", tmp_path / "scripts")
     (tmp_path / "pyproject.toml").write_text("")
     (tmp_path / "src" / "trading_crab_lib" / "platform").mkdir(parents=True)
-    for rel in ("legacy/data/x.csv", "data/checkpoints/y", "outputs/z", "src/pkg/__pycache__/m.pyc"):
+    for rel in files:
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel).write_text("x")
-    subprocess.run(["bash", "scripts/clean_workspace.sh"], cwd=tmp_path, check=True, capture_output=True)
-    assert (tmp_path / "legacy" / "data" / "x.csv").read_text() == "x"
+    git = ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false"]
+    for args in (["init", "-q"], ["add", "-A", "-f"], ["commit", "-q", "--no-verify", "-m", "fixture"]):
+        subprocess.run([*git, *args], cwd=tmp_path, check=True, capture_output=True)
+
+
+@needs_git
+def test_clean_workspace_removes_generated_files_and_keeps_tracked_and_legacy(tmp_path):
+    _checkout(tmp_path, ("legacy/data/x.csv", "src/keep.py", "src/gone.py"))
+    for rel in ("data/checkpoints/y", "outputs/z", "src/pkg/__pycache__/m.pyc"):
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text("x")
+    (tmp_path / "src" / "gone.py").unlink()  # deleted by hand before the run: not the script's doing, so no failure
+    done = subprocess.run(["bash", "scripts/clean_workspace.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert (tmp_path / "legacy" / "data" / "x.csv").read_text() == "x" and (tmp_path / "src" / "keep.py").exists()
     assert not (tmp_path / "data").exists() and not (tmp_path / "outputs").exists()
     assert not (tmp_path / "src" / "pkg" / "__pycache__").exists()
+
+
+@needs_git
+def test_clean_workspace_fails_on_a_tracked_file_it_removed_and_names_only_that_file(tmp_path):
+    _checkout(tmp_path, ("data/tracked.csv", "src/gone.py"))  # a tracked file under data/, which the script removes
+    (tmp_path / "src" / "gone.py").unlink()
+    done = subprocess.run(["bash", "scripts/clean_workspace.sh"], cwd=tmp_path, capture_output=True, text=True)
+    assert done.returncode == 1
+    assert "git restore -- data/tracked.csv\n" in done.stderr and "gone.py" not in done.stderr
+    assert "git restore ." not in done.stderr  # that would discard every unstaged edit
 
 
 def test_clean_workspace_refuses_outside_a_checkout(tmp_path):
