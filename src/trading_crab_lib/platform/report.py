@@ -53,6 +53,7 @@ def render(raw: pd.DataFrame, backdrop: pd.DataFrame, weights: pd.Series, *, cfg
     through, latest, max_age = complete_through(raw), raw.index.max(), cfg["report"]["max_age_days"]
     age = (pd.Timestamp(run_date) - through).days
     missing = [str(column) for column in raw.columns if pd.isna(raw.loc[latest, column])]
+    rows = {name: round(100 * weight, 1) for name, weight in weights.items()}  # Total is the sum of the printed rows
     allocation = cfg["allocation"]
     lines = [
         "# Trading-Crab weekly page",
@@ -73,8 +74,8 @@ def render(raw: pd.DataFrame, backdrop: pd.DataFrame, weights: pd.Series, *, cfg
         "",
         "| Asset | Target % |",
         "|---|---|",
-        *(f"| {name} | {100 * weight:.1f}% |" for name, weight in weights.items()),
-        f"| Total | {100 * weights.sum():.1f}% |",
+        *(f"| {name} | {pct:.1f}% |" for name, pct in rows.items()),
+        f"| Total | {sum(rows.values()):.1f}% |",
         "",
         f"Method: inverse volatility on the last {allocation['vol_window']} month-end returns, scaled so the mix's"
         f" annual volatility is at most {allocation['vol_target']:.0%}; the rest is cash (DECISIONS G-23).",
