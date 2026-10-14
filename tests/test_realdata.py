@@ -5,6 +5,8 @@ Without a build these tests skip, and ``pytest -m realdata`` stops with a usage 
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 import pytest
 
@@ -29,4 +31,5 @@ def test_the_weekly_page_renders_from_the_real_build():
     page = report.run(load()).read_text(encoding="utf-8")
     assert page.splitlines()[2].startswith("Code:")
     assert "## Backdrop (causal features; they set no weight)" in page
-    assert "| Total | 100.0% |" in page
+    *rows, (name, total) = re.findall(r"^\| (\w+) \| ([0-9.]+)% \|$", page, re.MULTILINE)
+    assert name == "Total" and total == f"{sum(float(pct) for _, pct in rows):.1f}"  # the sum of the printed rows

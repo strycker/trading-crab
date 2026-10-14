@@ -64,8 +64,16 @@ def _render_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     return raw, backdrop, weights
 
 
-def _page(run_date: date) -> str:
-    return render(*_render_inputs(), cfg=load(), code_line="Code: test @ abc1234 — /x", run_date=run_date)
+def _page(run_date: date, weights: pd.Series | None = None) -> str:
+    raw, backdrop, mix = _render_inputs()
+    return render(raw, backdrop, mix if weights is None else weights, cfg=load(), code_line="Code: test @ abc1234 — /x",
+                  run_date=run_date)
+
+
+def _total_is_the_row_sum(page: str) -> bool:
+    """The printed Total equals the sum of the printed (rounded) mix rows."""
+    *rows, (name, total) = re.findall(r"^\| (\w+) \| ([0-9.]+)% \|$", page, re.MULTILINE)
+    return name == "Total" and total == f"{sum(float(pct) for _, pct in rows):.1f}"
 
 
 def test_render_shows_run_date_data_through_and_the_backdrop():
@@ -93,6 +101,12 @@ def test_render_lists_the_mix_in_config_order_then_cash_with_the_total():
     assert "Scoreboard: not yet measured (arrives with 9.4)" in lines
 
 
+def test_the_total_row_is_the_sum_of_the_rounded_rows():
+    thirds = pd.Series({"SPY": 0.233333, "TLT": 0.233333, "IAU": 0.2, "USO": 0.0, "cash": 0.333334})
+    page = _page(date(2024, 3, 4), weights=thirds)  # the weights sum to 1, the printed rows to 99.9
+    assert "| Total | 99.9% |" in page and _total_is_the_row_sum(page)
+
+
 def test_stale_banner_past_max_age_only():
     assert load()["report"]["max_age_days"] == 45
     assert "**STALE:**" in _page(date(2024, 2, 29) + timedelta(days=60))
@@ -111,7 +125,7 @@ def test_weekly_puts_the_inverse_vol_mix_on_the_page(tc_root, fixed_build):
     assert weights.sum() == pytest.approx(1.0, rel=1e-9)
     assert list(backdrop.columns) == features.COLUMNS and raw.index.max() == pd.Timestamp("2026-09-30")
     page = (tc_root / "outputs" / "reports" / "weekly_report.md").read_text()
-    assert "| Total | 100.0% |" in page
+    assert _total_is_the_row_sum(page)
     assert all(f"| {name} | {100 * weights[name]:.1f}% |" in page for name in weights.index)
     assert "Scoreboard: not yet measured (arrives with 9.4)" in page
     assert "STALE" not in page  # the fake build's run date is 14 days after its data

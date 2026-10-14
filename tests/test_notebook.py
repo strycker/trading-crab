@@ -63,6 +63,8 @@ def test_the_notebook_runs_top_to_bottom_on_a_synthetic_build(fake_http, fake_ke
         exec(compile(source, f"E2E_skeleton.ipynb code cell {index}", "exec"), namespace)
     out = capsys.readouterr().out
     assert out.splitlines()[0].startswith("Code:")
-    assert "| Total | 100.0% |" in out and "Scoreboard: not yet measured" in out
+    *rows, (name, total) = re.findall(r"^\| (\w+) \| ([0-9.]+)% \|$", out, re.MULTILINE)
+    assert name == "Total" and total == f"{sum(float(pct) for _, pct in rows):.1f}"  # the sum of the printed rows
+    assert "Scoreboard: not yet measured" in out
     assert not any(key in out for key in fake_keys.values())
     assert not [term for term in PERFORMANCE_TERMS if term in out.lower()]
