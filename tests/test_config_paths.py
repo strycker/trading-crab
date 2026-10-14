@@ -31,6 +31,8 @@ def test_repo_config_has_every_section_and_a_string_cutoff():
 
 
 def test_an_exported_key_beats_dotenv_and_missing_keys_are_none(tc_root, monkeypatch):
+    for name in ("FRED_API_KEY", "TIINGO_API_KEY"):
+        monkeypatch.delenv(name)  # the autouse fake keys
     assert load()["keys"] == {"FRED_API_KEY": None, "TIINGO_API_KEY": None}
     (tc_root / ".env").write_text("FRED_API_KEY=from-dotenv\nTIINGO_API_KEY=tiingo-from-dotenv\n")
     monkeypatch.setenv("FRED_API_KEY", "exported-key")

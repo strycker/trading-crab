@@ -8,19 +8,33 @@ import pandas as pd
 import pytest
 
 from trading_crab.cli import main
+from trading_crab_lib.platform import ingest
 from trading_crab_lib.platform.report import render
 
+KEYS = ("test-fred-key-123", "test-tiingo-key-456")
 
-def test_build_then_weekly_writes_the_page(tc_root, capsys):
+
+@pytest.fixture
+def fixed_build(fake_http, monkeypatch):
+    """``tradingcrab build`` through ``fake_http`` on its fixed run date."""
+    real = ingest.build
+    monkeypatch.setattr(ingest, "build", lambda cfg: real(cfg, today=fake_http.today))
+    return fake_http
+
+
+def test_build_then_weekly_writes_the_page(tc_root, fixed_build, capsys):
     assert main(["build"]) == 0
-    out = capsys.readouterr().out.splitlines()
-    assert out[0].startswith("Code:")
-    assert any("data through month-end 2021-01-31" in line for line in out)
+    built = capsys.readouterr()
+    assert built.out.splitlines()[0].startswith("Code:")
+    assert any("data through month-end 2026-09-30" in line for line in built.out.splitlines())
     assert main(["weekly"]) == 0
-    assert capsys.readouterr().out.splitlines()[0].startswith("Code:")
+    weekly = capsys.readouterr()
+    assert weekly.out.splitlines()[0].startswith("Code:")
     page = (tc_root / "outputs" / "reports" / "weekly_report.md").read_text()
-    assert "Data through month-end 2021-01-31 (latest complete month)" in page
+    assert "Data through month-end 2026-09-30 (latest complete month)" in page
     assert page.splitlines()[2].startswith("Code:")
+    for text in (built.out, built.err, weekly.out, weekly.err, page):
+        assert not any(key in text for key in KEYS)
 
 
 def test_weekly_before_any_build_fails_and_names_the_fix(capsys):
