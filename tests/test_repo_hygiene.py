@@ -66,7 +66,8 @@ def test_nothing_generated_secret_or_pickled_is_tracked_outside_legacy():
     outside = [f for f in _tracked() if not f.startswith("legacy/")]
     assert not [f for f in outside if f.startswith(("data/", "outputs/"))]
     assert not [f for f in outside if f.endswith((".pkl", ".pickle", ".parquet", ".xlsx"))]
-    assert not [f for f in _tracked() if Path(f).name == ".env"]
+    env_files = [f for f in _tracked() if Path(f).name == ".env" or Path(f).name.startswith(".env.")]
+    assert env_files == [".env.example"]  # .env, .env.local, .env.bak, ... never; only the keyless template
 
 
 @needs_git

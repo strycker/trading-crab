@@ -1,7 +1,9 @@
 # Ignore by path, never by a broad name pattern: `*checkpoint*` once swallowed a source file (LEARNINGS).
 
-# Secrets: never commit
+# Secrets: never commit (.env.example is the keyless template)
 .env
+.env.*
+!.env.example
 *.key
 
 # Generated: nothing generated is tracked (data/, outputs/, builds)
