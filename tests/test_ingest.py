@@ -15,7 +15,6 @@ from trading_crab_lib.platform import checkpoints, ingest
 from trading_crab_lib.platform.config import load
 from trading_crab_lib.platform.paths import data_dir
 
-FRED_KEY, TIINGO_KEY = "test-fred-key-123", "test-tiingo-key-456"
 COLUMNS = ["gs10", "tb3ms", "baa", "unrate", "SPY", "TLT", "IAU", "USO"]
 
 
@@ -26,16 +25,18 @@ def _nothing_written() -> bool:
 # ── parsing and complete month-ends ──
 
 
-def test_fred_dot_is_missing_and_the_first_of_the_month_lands_on_its_month_end(fake_http):
-    series = ingest.fred_series("GS10", api_key=FRED_KEY, start="1993-01-01", today=fake_http.today)
+def test_fred_dot_is_missing_and_the_first_of_the_month_lands_on_its_month_end(fake_keys, fake_http):
+    fred_key = fake_keys["FRED_API_KEY"]
+    series = ingest.fred_series("GS10", api_key=fred_key, start="1993-01-01", today=fake_http.today)
     assert series.index[0] == pd.Timestamp("1993-01-31")
     assert series.index[-1] == pd.Timestamp("2026-09-30")  # the 2026-09-01 observation
     assert np.isnan(series.loc["1993-11-30"]) and series.notna().sum() == len(series) - 1
 
 
 @pytest.mark.parametrize(("today", "last"), [("2026-10-31", "2026-09-30"), ("2026-11-01", "2026-10-31")])
-def test_tiingo_keeps_only_complete_month_ends(fake_http, today, last):
-    prices = ingest.tiingo_prices("SPY", api_key=TIINGO_KEY, start="1993-01-01", today=pd.Timestamp(today))
+def test_tiingo_keeps_only_complete_month_ends(fake_keys, fake_http, today, last):
+    tiingo_key = fake_keys["TIINGO_API_KEY"]
+    prices = ingest.tiingo_prices("SPY", api_key=tiingo_key, start="1993-01-01", today=pd.Timestamp(today))
     assert prices.index[-1] == pd.Timestamp(last)  # a label on or after the run date is an unfinished month
     rows = fake_http(f"{ingest.TIINGO_URL}/SPY/prices", params={"endDate": today})
     september = [r["adjClose"] for r in rows if r["date"].startswith("2026-09")]
@@ -65,7 +66,8 @@ def test_the_unrate_lag_is_at_least_one_month():
     assert load()["publication_lags"]["unrate"] >= 1  # literal floor: BLS publishes month m during m+1
 
 
-def test_the_build_saves_lagged_fenced_monthly_raw_in_config_order(fake_http):
+def test_the_build_saves_lagged_fenced_monthly_raw_in_config_order(fake_keys, fake_http):
+    fred_key = fake_keys["FRED_API_KEY"]
     cfg = load()
     raw = ingest.build(cfg, today=fake_http.today)
     assert list(raw.columns) == COLUMNS
@@ -73,11 +75,11 @@ def test_the_build_saves_lagged_fenced_monthly_raw_in_config_order(fake_http):
     assert checkpoints.load("monthly_raw").index.max() == pd.Timestamp("2020-12-31")
     assert pd.read_parquet(data_dir() / "holdout" / "monthly_raw.parquet").index.min() == pd.Timestamp("2021-01-31")
     assert checkpoints.load_meta("monthly_raw")["meta"] == {"publication_lags": cfg["publication_lags"]}
-    unlagged = ingest.fred_series("UNRATE", api_key=FRED_KEY, start="1993-01-01", today=fake_http.today)
+    unlagged = ingest.fred_series("UNRATE", api_key=fred_key, start="1993-01-01", today=fake_http.today)
     same = {"rtol": 1e-9, "atol": 0, "check_names": False, "check_freq": False}
     a_month_earlier = unlagged.reindex(raw.index - pd.offsets.MonthEnd(1)).set_axis(raw.index)
     pd.testing.assert_series_equal(raw["unrate"], a_month_earlier, **same)  # unrate at t is the value of t - 1 month
-    gs10 = ingest.fred_series("GS10", api_key=FRED_KEY, start="1993-01-01", today=fake_http.today)
+    gs10 = ingest.fred_series("GS10", api_key=fred_key, start="1993-01-01", today=fake_http.today)
     pd.testing.assert_series_equal(raw["gs10"], gs10.reindex(raw.index), **same)  # lag 0: unchanged
 
 
@@ -121,17 +123,18 @@ def test_an_implausible_month_end_return_fails_the_build(fake_http):
 # ── secrets ──
 
 
-def test_keys_never_reach_an_error_and_the_tiingo_token_rides_the_header_only(fake_http):
+def test_keys_never_reach_an_error_and_the_tiingo_token_rides_the_header_only(fake_keys, fake_http):
+    fred_key, tiingo_key = fake_keys["FRED_API_KEY"], fake_keys["TIINGO_API_KEY"]
     fake_http.fail["GS10"] = "error"  # its text carries the request URL, FRED key included
     with pytest.raises(ingest.BuildFailed) as err:
         ingest.build(load(), today=fake_http.today)
-    assert FRED_KEY not in str(err.value) and "***" in str(err.value)
+    assert fred_key not in str(err.value) and "***" in str(err.value)
     tiingo = [call for call in fake_http.calls if call["url"].startswith(ingest.TIINGO_URL)]
     assert len(tiingo) == 4
     for call in tiingo:
-        assert TIINGO_KEY not in call["url"] + str(call["params"])
-        assert call["headers"] == {"Authorization": f"Token {TIINGO_KEY}"}
-    assert ingest._redact(f"a {FRED_KEY} b {TIINGO_KEY}", FRED_KEY, TIINGO_KEY, None) == "a *** b ***"
+        assert tiingo_key not in call["url"] + str(call["params"])
+        assert call["headers"] == {"Authorization": f"Token {tiingo_key}"}
+    assert ingest._redact(f"a {fred_key} b {tiingo_key}", fred_key, tiingo_key, None) == "a *** b ***"
 
 
 # ── the HTTP seam: rate limits ──
@@ -157,16 +160,18 @@ def _fake_get(monkeypatch, replies: list[_Response]) -> list[dict]:
     return calls
 
 
-def test_a_rate_limit_is_retried_and_then_succeeds(monkeypatch):
+def test_a_rate_limit_is_retried_and_then_succeeds(fake_keys, monkeypatch):
+    tiingo_key = fake_keys["TIINGO_API_KEY"]
     rows = [{"date": "2024-01-31T00:00:00.000Z", "adjClose": 1.0}]
     calls = _fake_get(monkeypatch, [_Response(429), _Response(429), _Response(200, rows)])
-    prices = ingest.tiingo_prices("SPY", api_key=TIINGO_KEY, start="2024-01-01", today=pd.Timestamp("2024-02-15"))
+    prices = ingest.tiingo_prices("SPY", api_key=tiingo_key, start="2024-01-01", today=pd.Timestamp("2024-02-15"))
     assert len(calls) == 3 and list(prices.index) == [pd.Timestamp("2024-01-31")]
     assert all(call["timeout"] == 30 and "verify" not in call for call in calls)  # default TLS, bounded wait
 
 
-def test_three_rate_limits_name_the_ticker(monkeypatch):
+def test_three_rate_limits_name_the_ticker(fake_keys, monkeypatch):
+    tiingo_key = fake_keys["TIINGO_API_KEY"]
     calls = _fake_get(monkeypatch, [_Response(429)])
     with pytest.raises(ingest.SourceError, match="SPY"):
-        ingest.tiingo_prices("SPY", api_key=TIINGO_KEY, start="2024-01-01", today=pd.Timestamp("2024-02-15"))
+        ingest.tiingo_prices("SPY", api_key=tiingo_key, start="2024-01-01", today=pd.Timestamp("2024-02-15"))
     assert len(calls) == 3

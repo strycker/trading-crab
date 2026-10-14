@@ -56,3 +56,7 @@ writing a module; add a line when a new mistake teaches a rule.
 36. A broad `.gitignore` pattern (`*checkpoint*`) can swallow a source file → ignore by path (`/data/`, `/outputs/`); test that every source file is tracked [9.1 research].
 37. Two workflows and two publish triggers for one package double-published → one workflow per concern, one trigger per package; a published version number is burned forever, so verify the installed artifact before tagging [L5, L11, RELEASING §3].
 38. `import platform` resolves to this repo's `platform/` package when Python runs from `src/trading_crab_lib/` → never run Python, pytest or notebooks with that working directory [9.1 research, Pitfall 4].
+
+## Secrets in tests
+
+39. A fake API key in a test tripped GitGuardian's high-entropy detector → fake keys are low-entropy `fake-...` values on lines marked `# ggignore` [GitGuardian incident 2026-10-14].

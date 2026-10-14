@@ -34,19 +34,19 @@ def test_an_exported_key_beats_dotenv_and_missing_keys_are_none(tc_root, monkeyp
     for name in ("FRED_API_KEY", "TIINGO_API_KEY"):
         monkeypatch.delenv(name)  # the autouse fake keys
     assert load()["keys"] == {"FRED_API_KEY": None, "TIINGO_API_KEY": None}
-    (tc_root / ".env").write_text("FRED_API_KEY=from-dotenv\nTIINGO_API_KEY=tiingo-from-dotenv\n")
-    monkeypatch.setenv("FRED_API_KEY", "exported-key")
+    (tc_root / ".env").write_text("FRED_API_KEY=fake-fred-key-dotenv\nTIINGO_API_KEY=fake-tiingo-key-dotenv\n")  # ggignore
+    monkeypatch.setenv("FRED_API_KEY", "fake-fred-key-exported")  # ggignore
     keys = load()["keys"]
-    assert keys == {"FRED_API_KEY": "exported-key", "TIINGO_API_KEY": "tiingo-from-dotenv"}
+    assert keys == {"FRED_API_KEY": "fake-fred-key-exported", "TIINGO_API_KEY": "fake-tiingo-key-dotenv"}  # ggignore
 
 
 def test_redacted_hides_both_keys_and_leaves_the_config_alone(monkeypatch):
-    monkeypatch.setenv("FRED_API_KEY", "fred-secret-123")
-    monkeypatch.setenv("TIINGO_API_KEY", "tiingo-secret-456")
+    monkeypatch.setenv("FRED_API_KEY", "fake-fred-key-shown")  # ggignore
+    monkeypatch.setenv("TIINGO_API_KEY", "fake-tiingo-key-shown")  # ggignore
     cfg = load()
     shown = str(redacted(cfg))
-    assert "fred-secret-123" not in shown and "tiingo-secret-456" not in shown
-    assert cfg["keys"]["FRED_API_KEY"] == "fred-secret-123"
+    assert "fake-fred-key-shown" not in shown and "fake-tiingo-key-shown" not in shown  # ggignore
+    assert cfg["keys"]["FRED_API_KEY"] == "fake-fred-key-shown"  # ggignore
 
 
 # ── paths ──

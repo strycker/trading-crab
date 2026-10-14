@@ -26,7 +26,7 @@ from trading_crab_lib.platform import ingest
 
 REPO = Path(__file__).resolve().parents[1]
 BUILT = REPO / "data" / "checkpoints" / "monthly_raw.parquet"
-FRED_KEY, TIINGO_KEY = "test-fred-key-123", "test-tiingo-key-456"
+FAKE_KEYS = {"FRED_API_KEY": "fake-fred-key", "TIINGO_API_KEY": "fake-tiingo-key"}  # ggignore
 
 
 @pytest.fixture(autouse=True)
@@ -44,10 +44,14 @@ def tc_root(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.
 
 
 @pytest.fixture(autouse=True)
-def fake_keys(tc_root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Fake API keys, so a test can assert that a key never reaches a message, a log or the page."""
-    monkeypatch.setenv("FRED_API_KEY", FRED_KEY)
-    monkeypatch.setenv("TIINGO_API_KEY", TIINGO_KEY)
+def fake_keys(tc_root: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    """Fake API keys, so a test can assert that a key never reaches a message, a log or the page.
+
+    Low-entropy ``fake-...`` values on a line marked ``ggignore``, so secret scanners skip them (LEARNINGS).
+    """
+    for name, value in FAKE_KEYS.items():
+        monkeypatch.setenv(name, value)
+    return dict(FAKE_KEYS)
 
 
 class FakeHttp:

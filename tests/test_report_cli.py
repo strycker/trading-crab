@@ -11,8 +11,6 @@ from trading_crab.cli import main
 from trading_crab_lib.platform import features, ingest
 from trading_crab_lib.platform.report import render
 
-KEYS = ("test-fred-key-123", "test-tiingo-key-456")
-
 
 @pytest.fixture
 def fixed_build(fake_http, monkeypatch):
@@ -22,7 +20,7 @@ def fixed_build(fake_http, monkeypatch):
     return fake_http
 
 
-def test_build_then_weekly_writes_the_page(tc_root, fixed_build, capsys):
+def test_build_then_weekly_writes_the_page(tc_root, fixed_build, fake_keys, capsys):
     assert main(["build"]) == 0
     built = capsys.readouterr()
     assert built.out.splitlines()[0].startswith("Code:")
@@ -34,7 +32,7 @@ def test_build_then_weekly_writes_the_page(tc_root, fixed_build, capsys):
     assert "Data through month-end 2026-09-30 (latest complete month)" in page
     assert page.splitlines()[2].startswith("Code:")
     for text in (built.out, built.err, weekly.out, weekly.err, page):
-        assert not any(key in text for key in KEYS)
+        assert not any(key in text for key in fake_keys.values())
 
 
 def test_weekly_before_any_build_fails_and_names_the_fix(capsys):
