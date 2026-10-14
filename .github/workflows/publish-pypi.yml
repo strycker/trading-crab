@@ -1,13 +1,30 @@
-name: Publish packages to PyPI
+# Publish trading-crab (app) and trading-crab-lib (library) to PyPI. Read RELEASING.md first.
+# Only a tag or a manual run starts a release (a GitHub Release publishes nothing):
+#   v0.2.0 -> trading-crab only;  lib-v0.2.0 -> trading-crab-lib only;  both-v0.2.0 -> both.
+# A manual run (Actions -> Publish to PyPI -> Run workflow) rehearses on TestPyPI unless its target is pypi.
+# Uploads use PyPI Trusted Publishing (OIDC): GitHub mints a short-lived token for the publish job alone, so no
+# API token is stored anywhere. PyPI trusts this file name and the environments `pypi` and `testpypi`.
+
+name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*", "lib-v*", "both-v*"]
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Which package to publish"
+        default: both
+        type: choice
+        options: [lib, app, both]
+      target:
+        description: "testpypi is a rehearsal; pypi is a real publish, and a version can never be re-uploaded"
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: publish-pypi
@@ -17,49 +34,104 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        package:
-          - "."
-          - "./src/trading_crab_lib"
-
+        include:
+          - leg: lib
+            prefix: lib-v
+          - leg: app
+            prefix: v
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
+      - uses: actions/checkout@v4
+      - name: Decide whether to publish this leg (read this line on every run)
+        id: gate
+        env:
+          LEG: ${{ matrix.leg }}
+          PREFIX: ${{ matrix.prefix }}
+          EVENT: ${{ github.event_name }}
+          PACKAGE: ${{ inputs.package }}
+          REF: ${{ github.ref }}
+        run: |
+          tag="${REF#refs/tags/}"
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            if [[ "$PACKAGE" == "both" || "$PACKAGE" == "$LEG" ]]; then go=true; else go=false; fi
+            why="manual run, package=$PACKAGE"
+          elif [[ "$tag" == both-v* || "$tag" == "$PREFIX"* ]]; then
+            go=true; why="tag=$tag"
+          else
+            go=false; why="tag=$tag matches neither $PREFIX nor both-v"
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+          if [[ "$go" == true ]]; then echo "PUBLISH: $LEG $why"; else echo "SKIP: $LEG reason=$why"; fi
+      - if: steps.gate.outputs.go == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-
-      - name: Build distributions
+          python-version: "3.12"
+      - name: Build both packages (the wheel check installs them together)
+        if: steps.gate.outputs.go == 'true'
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install build
-          python -m build "${{ matrix.package }}" --outdir dist
-
-      - name: Upload build artifacts
+          python -m pip install --upgrade pip build twine
+          python -m build src/trading_crab_lib --outdir dist-lib
+          python -m build . --outdir dist-app
+      - name: Every file of this leg carries the tag's version
+        if: steps.gate.outputs.go == 'true' && github.event_name == 'push'
+        env:
+          LEG: ${{ matrix.leg }}
+          PREFIX: ${{ matrix.prefix }}
+          REF: ${{ github.ref }}
+        run: |
+          tag="${REF#refs/tags/}"
+          version="${tag#both-v}"
+          version="${version#"$PREFIX"}"
+          for file in dist-"$LEG"/*; do
+            name=$(basename "$file")
+            found=$(echo "${name%.tar.gz}" | cut -d- -f2)   # name-VERSION-... (wheel) or name-VERSION.tar.gz (sdist)
+            if [[ "$found" != "$version" ]]; then
+              echo "ERROR: $name is version $found but tag $tag says $version: bump both pyproject versions or retag" >&2
+              exit 1
+            fi
+          done
+          echo "dist-$LEG matches tag $tag (version $version)"
+      - name: Metadata check
+        if: steps.gate.outputs.go == 'true'
+        env:
+          LEG: ${{ matrix.leg }}
+        run: twine check --strict dist-"$LEG"/*
+      - name: Install both wheels in a fresh venv and import them (an empty wheel passes every other check)
+        if: steps.gate.outputs.go == 'true'
+        run: bash scripts/check_wheels.sh dist-lib dist-app
+      - name: Hand this leg's files to the publish job
+        if: steps.gate.outputs.go == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.package == '.' && 'app' || 'lib' }}
-          path: dist/*
+          name: dist-${{ matrix.leg }}
+          path: dist-${{ matrix.leg }}/*
+          if-no-files-found: error
 
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/trading-crab
-
+    # A tag push, or a manual run that chose pypi, is a real publish; anything else rehearses on TestPyPI.
+    environment: ${{ (github.event_name == 'push' || inputs.target == 'pypi') && 'pypi' || 'testpypi' }}
+    permissions:
+      id-token: write
     steps:
-      - name: Download artifacts
+      - name: Collect the built files (no checkout, so no repository code runs in this job)
         uses: actions/download-artifact@v4
         with:
           pattern: dist-*
-          path: dist
           merge-multiple: true
-
-      - name: Publish to PyPI
+          path: dist
+      - name: Upload to PyPI
+        if: github.event_name == 'push' || inputs.target == 'pypi'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          skip-existing: true
+      - name: Upload to TestPyPI (rehearsal)
+        if: github.event_name != 'push' && inputs.target != 'pypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          repository-url: https://test.pypi.org/legacy/
           skip-existing: true
