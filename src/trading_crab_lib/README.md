@@ -1,20 +1,9 @@
 # trading-crab-lib
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.13-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+The library behind Trading-Crab's `tradingcrab` command: `trading_crab_lib.platform` holds the paths, config,
+checkpoints, data build and weekly page of a weekly, guidance-only portfolio platform.
 
-Library for market regime classification and prediction pipeline.
+It is built from `src/trading_crab_lib/` of <https://github.com/strycker/trading-crab>. Install, run, tests and the
+project rules are in that repository's README.
 
-<br>
-
-Predict market conditions, best portfolios, and stock picks.
-
-<br>
-
-Classifies each calendar quarter with a macro regime (e.g. Stagflation, Growth Boom), then predicts today's regime and forward transition probabilities to generate weekly portfolio recommendations.
-
-<br>
-
-![Glenn with crab 2025](https://raw.githubusercontent.com/strycker/trading-crab/refs/heads/main/images/glenn_with_crab_2025_300x400.png)
-
-<br>
+License: MIT.
